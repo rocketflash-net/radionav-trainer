@@ -33,4 +33,4 @@ No installation or build step needed. Download `index.html` and open it in any m
 
 This app keeps things simple (no magnetic variation, no DME slant range, fixed turn rate of 3° per second). It is meant to help you understand the concepts. It does not replace training with a flight instructor or a certified simulator.
 
-The in-app text is in Indonesian.
+The app is available in English and Indonesian. Use the **EN / ID** switch in the top right corner.

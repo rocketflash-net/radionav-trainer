@@ -18,15 +18,19 @@
 *{box-sizing:border-box}
 html,body{background:var(--bg);color:var(--fg)}
 body{margin:0;font-family:var(--font);font-size:14px;line-height:1.5;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:16px 40px}
+[hidden]{display:none!important}
 .wrap{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.top-r{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 h1{margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 h1 span{color:var(--mag)}
 .modes{display:flex;gap:4px;background:var(--bezel);border:1px solid var(--line);border-radius:8px;padding:4px;flex-wrap:wrap}
 .modes button{font:inherit;font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--muted);background:transparent;border:0;border-radius:5px;padding:8px 12px;cursor:pointer}
-.modes button[aria-selected="true"]{background:var(--panel2);color:var(--green);box-shadow:inset 0 0 0 1px var(--line)}
+.modes button[aria-selected="true"],.modes button[aria-pressed="true"]{background:var(--panel2);color:var(--green);box-shadow:inset 0 0 0 1px var(--line)}
+.modes.lang button[aria-pressed="true"]{color:var(--cyan)}
 .modes button:focus-visible,.btn:focus-visible,.chk input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.lb{display:contents}
 
 .sim{display:grid;grid-template-columns:290px minmax(0,1fr) 330px;gap:12px;align-items:start}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
@@ -112,21 +116,27 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--bezel);border:1px so
 <div class="wrap">
   <header class="top">
     <div>
-      <div class="eyebrow">Latihan intercept &amp; approach · VOR · NDB · ILS</div>
+      <div class="eyebrow" data-i18n="eyebrow">Latihan intercept &amp; approach · VOR · NDB · ILS</div>
       <h1>RadioNav <span>Trainer</span></h1>
     </div>
-    <nav class="modes" role="tablist" aria-label="Mode latihan">
-      <button role="tab" data-mode="vor" aria-selected="true">VOR RADIAL</button>
-      <button role="tab" data-mode="ndb" aria-selected="false">NDB / ADF</button>
-      <button role="tab" data-mode="ils" aria-selected="false">ILS APPROACH</button>
-    </nav>
+    <div class="top-r">
+      <nav class="modes" role="tablist" data-i18n-aria="modesAria" aria-label="Mode latihan">
+        <button role="tab" data-mode="vor" aria-selected="true">VOR RADIAL</button>
+        <button role="tab" data-mode="ndb" aria-selected="false">NDB / ADF</button>
+        <button role="tab" data-mode="ils" aria-selected="false">ILS APPROACH</button>
+      </nav>
+      <div class="modes lang" role="group" aria-label="Bahasa / Language">
+        <button data-lang="id" aria-pressed="true" title="Bahasa Indonesia">ID</button>
+        <button data-lang="en" aria-pressed="false" title="English">EN</button>
+      </div>
+    </div>
   </header>
 
   <main class="sim">
-    <section class="panel inst" aria-label="Instrumen">
+    <section class="panel inst" data-i18n-aria="instAria" aria-label="Instrumen">
       <div class="gauges">
         <div class="gauge"><span class="eyebrow" id="hsiLbl">HSI · NAV1 VOR</span><canvas id="hsi" aria-label="Horizontal Situation Indicator"></canvas></div>
-        <div class="gauge"><span class="eyebrow" id="rmiLbl">RMI · jarum ke stasiun</span><canvas id="rmi" aria-label="Radio Magnetic Indicator"></canvas></div>
+        <div class="gauge"><span class="eyebrow" id="rmiLbl">RMI</span><canvas id="rmi" aria-label="Radio Magnetic Indicator"></canvas></div>
       </div>
       <dl class="ro">
         <div><dt>HDG</dt><dd id="rHdg">---</dd></div>
@@ -135,29 +145,29 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--bezel);border:1px so
         <div><dt>DME NM</dt><dd id="rDme">---</dd></div>
         <div><dt>ALT ft</dt><dd id="rAlt">---</dd></div>
         <div><dt>V/S fpm</dt><dd id="rVs">---</dd></div>
-        <div style="grid-column:1/-1"><dt>ANGIN</dt><dd id="rWind" class="c">CALM</dd></div>
+        <div style="grid-column:1/-1"><dt data-i18n="wind">ANGIN</dt><dd id="rWind" class="c">CALM</dd></div>
       </dl>
     </section>
 
-    <section class="panel mapwrap" aria-label="Peta posisi">
+    <section class="panel mapwrap" data-i18n-aria="mapAria" aria-label="Peta posisi">
       <canvas id="map"></canvas>
       <div id="result" class="result" hidden>
         <h2 id="resTitle"></h2>
         <p id="resText"></p>
-        <div class="row"><button class="btn" id="retry">Ulangi skenario</button><button class="btn pri" id="next">Skenario baru</button></div>
+        <div class="row"><button class="btn" id="retry" data-i18n="retry">Ulangi skenario</button><button class="btn pri" id="next" data-i18n="newScn">Skenario baru</button></div>
       </div>
       <div class="mapbar">
         <span id="clock">00:00</span>
-        <span class="chip" id="chip1">MENCARI</span>
+        <span class="chip" id="chip1">---</span>
         <span class="chip" id="chip2" hidden>GS</span>
-        <div class="prog" title="Waktu established"><i id="progBar"></i></div>
+        <div class="prog" data-i18n-title="progTitle" title="Waktu established"><i id="progBar"></i></div>
         <span id="progTxt">0/20 s</span>
       </div>
     </section>
 
-    <section class="panel side" aria-label="Instruksi dan kontrol">
+    <section class="panel side" data-i18n-aria="sideAria" aria-label="Instruksi dan kontrol">
       <div class="brief">
-        <div class="eyebrow">Instruksi</div>
+        <div class="eyebrow" data-i18n="instr">Instruksi</div>
         <p id="brief"></p>
         <p id="sub"></p>
         <p id="criteria"></p>
@@ -175,86 +185,158 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--bezel);border:1px so
       <div class="row">
         <button class="btn" id="pause">Jeda</button>
         <button class="btn sel" data-rate="1">1×</button><button class="btn" data-rate="2">2×</button><button class="btn" data-rate="4">4×</button>
-        <button class="btn" id="hintBtn">Petunjuk</button>
-        <button class="btn pri" id="newBtn">Skenario baru</button>
+        <button class="btn" id="hintBtn" data-i18n="hint">Petunjuk</button>
+        <button class="btn pri" id="newBtn" data-i18n="newScn">Skenario baru</button>
       </div>
 
       <div class="opts">
-        <label class="chk"><input type="checkbox" id="optWind"> Angin acak</label>
-        <label class="chk"><input type="checkbox" id="optMap" checked> Tampilkan peta</label>
+        <label class="chk"><input type="checkbox" id="optWind"> <span data-i18n="optWind">Angin acak</span></label>
+        <label class="chk"><input type="checkbox" id="optMap" checked> <span data-i18n="optMap">Tampilkan peta</span></label>
       </div>
 
       <div class="hint" id="hint" hidden></div>
 
       <div class="keys">
-        <span><kbd>←</kbd> <kbd>→</kbd></span><span>Heading bug ±5° (Shift = ±1°)</span>
-        <span><kbd>Q</kbd> <kbd>E</kbd></span><span>Course (OBS) ±5° (Shift = ±1°)</span>
-        <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Vertical speed ±100 fpm (ILS)</span>
-        <span><kbd>Spasi</kbd></span><span>Jeda / lanjut</span>
-        <span><kbd>N</kbd> <kbd>H</kbd></span><span>Skenario baru / petunjuk</span>
+        <div class="lb" data-lang-block="id">
+          <span><kbd>←</kbd> <kbd>→</kbd></span><span>Heading bug ±5° (Shift = ±1°)</span>
+          <span><kbd>Q</kbd> <kbd>E</kbd></span><span>Course (OBS) ±5° (Shift = ±1°)</span>
+          <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Vertical speed ±100 fpm (ILS)</span>
+          <span><kbd>Spasi</kbd></span><span>Jeda / lanjut</span>
+          <span><kbd>N</kbd> <kbd>H</kbd></span><span>Skenario baru / petunjuk</span>
+        </div>
+        <div class="lb" data-lang-block="en" hidden>
+          <span><kbd>←</kbd> <kbd>→</kbd></span><span>Heading bug ±5° (Shift = ±1°)</span>
+          <span><kbd>Q</kbd> <kbd>E</kbd></span><span>Course (OBS) ±5° (Shift = ±1°)</span>
+          <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Vertical speed ±100 fpm (ILS)</span>
+          <span><kbd>Space</kbd></span><span>Pause / resume</span>
+          <span><kbd>N</kbd> <kbd>H</kbd></span><span>New scenario / hint</span>
+        </div>
       </div>
     </section>
   </main>
 
-  <section class="learn" aria-label="Materi">
-    <h2>Materi singkat</h2>
-    <article>
-      <h3>Radial, QDM, QDR</h3>
-      <p><b>Radial</b> adalah garis magnetik yang keluar <i>dari</i> VOR. Radial 090 berada di timur stasiun.</p>
-      <ul>
-        <li><code>QDR</code> = bearing magnetik dari stasiun ke pesawat (setara radial, dipakai untuk NDB).</li>
-        <li><code>QDM</code> = bearing magnetik dari pesawat ke stasiun. <code>QDM = QDR ± 180</code>.</li>
-        <li>Terbang <i>inbound</i> di radial 090 berarti track 270 (QDM 270).</li>
-      </ul>
-    </article>
-    <article>
-      <h3>Membaca HSI</h3>
-      <ul>
-        <li>Panah magenta = course yang dipilih (CRS/OBS). Batang tengah = CDI.</li>
-        <li>Fly <i>toward the needle</i>: jika CDI di kanan, course ada di kanan pesawat.</li>
-        <li>Skala: VOR 5° per dot (2 dot = 10°). LOC 1,25° per dot.</li>
-        <li>Segitiga TO/FROM menunjukkan apakah course yang dipilih menuju atau menjauhi stasiun.</li>
-        <li>Untuk inbound set CRS = track inbound (flag TO). Untuk outbound set CRS = radial (flag FROM).</li>
-      </ul>
-    </article>
-    <article>
-      <h3>Langkah intercept</h3>
-      <ol>
-        <li><b>Orientasi.</b> Saya di radial berapa? Lihat ekor jarum RMI, atau putar OBS sampai CDI di tengah dengan FROM.</li>
-        <li><b>Set course</b> yang diminta.</li>
-        <li><b>Pilih heading intercept</b> = course ± sudut intercept, ke arah sisi jarum CDI.</li>
-        <li><b>Lead the turn.</b> Saat CDI mulai bergerak ke tengah, mulai belok ke course.</li>
-        <li><b>Tracking.</b> Koreksi angin, pertahankan CDI di tengah.</li>
-      </ol>
-    </article>
-    <article>
-      <h3>Memilih sudut intercept</h3>
-      <ul>
-        <li><b>Inbound:</b> sudut intercept = 2 × selisih sudut (minimal 20°, maksimal 90°). Selisih radial 20° → intercept 40°.</li>
-        <li><b>Outbound:</b> pakai 30°–45°. Makin jauh dari stasiun, radial makin renggang dan intercept terasa lambat.</li>
-        <li>Dekat stasiun, radial sangat rapat: CDI bergerak cepat, jadi lead turn lebih awal.</li>
-      </ul>
-    </article>
-    <article>
-      <h3>NDB dengan RMI</h3>
-      <ul>
-        <li>Kepala jarum = QDM. Ekor jarum = QDR.</li>
-        <li><b>Inbound:</b> established saat kepala jarum menunjuk QDM yang diminta dan heading ≈ QDM (tanpa angin).</li>
-        <li><b>Outbound:</b> established saat ekor jarum menunjuk QDR yang diminta.</li>
-        <li>Ingat: <i>push the head, pull the tail</i>. Saat intercept, kepala jarum bergerak menjauhi heading; ekor jarum bergerak mendekati.</li>
-      </ul>
-    </article>
-    <article>
-      <h3>ILS approach</h3>
-      <ul>
-        <li>LOC memberi panduan lateral, GS panduan vertikal (umumnya 3°).</li>
-        <li>ATC biasanya memberi vektor dengan sudut intercept LOC ≤ 30°.</li>
-        <li>Intercept GS dari bawah: pertahankan ketinggian sampai diamond GS turun ke tengah.</li>
-        <li>Rate turun ≈ <code>groundspeed × 5</code> fpm. Tinggi di GS ≈ <code>300 ft per NM</code>.</li>
-        <li>CAT I: di DA 200 ft, LOC dan GS harus di dalam 1 dot, kalau tidak lakukan missed approach.</li>
-      </ul>
-    </article>
-    <p class="note">Koreksi angin: wind correction angle ≈ (crosswind ÷ TAS) × 60. Simulator ini menyederhanakan banyak hal (variasi magnetik, slant range DME, kecepatan belok tetap 3°/detik). Dipakai untuk memahami konsep, bukan pengganti latihan dengan instruktur atau simulator tersertifikasi.</p>
+  <section class="learn" data-i18n-aria="learnAria" aria-label="Materi">
+    <div class="lb" data-lang-block="id">
+      <h2>Materi singkat</h2>
+      <article>
+        <h3>Radial, QDM, QDR</h3>
+        <p><b>Radial</b> adalah garis magnetik yang keluar <i>dari</i> VOR. Radial 090 berada di timur stasiun.</p>
+        <ul>
+          <li><code>QDR</code> = bearing magnetik dari stasiun ke pesawat (setara radial, dipakai untuk NDB).</li>
+          <li><code>QDM</code> = bearing magnetik dari pesawat ke stasiun. <code>QDM = QDR ± 180</code>.</li>
+          <li>Terbang <i>inbound</i> di radial 090 berarti track 270 (QDM 270).</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Membaca HSI</h3>
+        <ul>
+          <li>Panah magenta = course yang dipilih (CRS/OBS). Batang tengah = CDI.</li>
+          <li>Fly <i>toward the needle</i>: jika CDI di kanan, course ada di kanan pesawat.</li>
+          <li>Skala: VOR 5° per dot (2 dot = 10°). LOC 1,25° per dot.</li>
+          <li>Segitiga TO/FROM menunjukkan apakah course yang dipilih menuju atau menjauhi stasiun.</li>
+          <li>Untuk inbound set CRS = track inbound (flag TO). Untuk outbound set CRS = radial (flag FROM).</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Langkah intercept</h3>
+        <ol>
+          <li><b>Orientasi.</b> Saya di radial berapa? Lihat ekor jarum RMI, atau putar OBS sampai CDI di tengah dengan FROM.</li>
+          <li><b>Set course</b> yang diminta.</li>
+          <li><b>Pilih heading intercept</b> = course ± sudut intercept, ke arah sisi jarum CDI.</li>
+          <li><b>Lead the turn.</b> Saat CDI mulai bergerak ke tengah, mulai belok ke course.</li>
+          <li><b>Tracking.</b> Koreksi angin, pertahankan CDI di tengah.</li>
+        </ol>
+      </article>
+      <article>
+        <h3>Memilih sudut intercept</h3>
+        <ul>
+          <li><b>Inbound:</b> sudut intercept = 2 × selisih sudut (minimal 20°, maksimal 90°). Selisih radial 20° → intercept 40°.</li>
+          <li><b>Outbound:</b> pakai 30°–45°. Makin jauh dari stasiun, radial makin renggang dan intercept terasa lambat.</li>
+          <li>Dekat stasiun, radial sangat rapat: CDI bergerak cepat, jadi lead turn lebih awal.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>NDB dengan RMI</h3>
+        <ul>
+          <li>Kepala jarum = QDM. Ekor jarum = QDR.</li>
+          <li><b>Inbound:</b> established saat kepala jarum menunjuk QDM yang diminta dan heading ≈ QDM (tanpa angin).</li>
+          <li><b>Outbound:</b> established saat ekor jarum menunjuk QDR yang diminta.</li>
+          <li>Ingat: <i>push the head, pull the tail</i>. Saat intercept, kepala jarum bergerak menjauhi heading; ekor jarum bergerak mendekati.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>ILS approach</h3>
+        <ul>
+          <li>LOC memberi panduan lateral, GS panduan vertikal (umumnya 3°).</li>
+          <li>ATC biasanya memberi vektor dengan sudut intercept LOC ≤ 30°.</li>
+          <li>Intercept GS dari bawah: pertahankan ketinggian sampai diamond GS turun ke tengah.</li>
+          <li>Rate turun ≈ <code>groundspeed × 5</code> fpm. Tinggi di GS ≈ <code>300 ft per NM</code>.</li>
+          <li>CAT I: di DA 200 ft, LOC dan GS harus di dalam 1 dot, kalau tidak lakukan missed approach.</li>
+        </ul>
+      </article>
+      <p class="note">Koreksi angin: wind correction angle ≈ (crosswind ÷ TAS) × 60. Simulator ini menyederhanakan banyak hal (variasi magnetik, slant range DME, kecepatan belok tetap 3°/detik). Dipakai untuk memahami konsep, bukan pengganti latihan dengan instruktur atau simulator tersertifikasi.</p>
+    </div>
+
+    <div class="lb" data-lang-block="en" hidden>
+      <h2>Quick lessons</h2>
+      <article>
+        <h3>Radial, QDM, QDR</h3>
+        <p>A <b>radial</b> is a magnetic line going out <i>from</i> a VOR. Radial 090 lies east of the station.</p>
+        <ul>
+          <li><code>QDR</code> = magnetic bearing from the station to the aircraft (same idea as a radial, used for NDBs).</li>
+          <li><code>QDM</code> = magnetic bearing from the aircraft to the station. <code>QDM = QDR ± 180</code>.</li>
+          <li>Flying <i>inbound</i> on radial 090 means a track of 270 (QDM 270).</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Reading the HSI</h3>
+        <ul>
+          <li>Magenta arrow = selected course (CRS/OBS). Center bar = CDI.</li>
+          <li>Fly <i>toward the needle</i>: if the CDI is to the right, the course is to your right.</li>
+          <li>Scale: VOR 5° per dot (2 dots = 10°). LOC 1.25° per dot.</li>
+          <li>The TO/FROM triangle shows whether the selected course leads to or away from the station.</li>
+          <li>Inbound: set CRS to the inbound track (TO flag). Outbound: set CRS to the radial (FROM flag).</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Intercept steps</h3>
+        <ol>
+          <li><b>Orient.</b> Which radial am I on? Check the RMI needle tail, or turn the OBS until the CDI centers with FROM.</li>
+          <li><b>Set the course</b> you were given.</li>
+          <li><b>Pick an intercept heading</b> = course ± intercept angle, toward the side the CDI is on.</li>
+          <li><b>Lead the turn.</b> When the CDI starts moving to the center, start turning onto the course.</li>
+          <li><b>Track.</b> Correct for wind and keep the CDI centered.</li>
+        </ol>
+      </article>
+      <article>
+        <h3>Choosing the intercept angle</h3>
+        <ul>
+          <li><b>Inbound:</b> intercept angle = 2 × the angle off course (at least 20°, at most 90°). 20° off → 40° intercept.</li>
+          <li><b>Outbound:</b> use 30°–45°. Far from the station the radials spread out, so the intercept feels slow.</li>
+          <li>Close to the station the radials are tight: the CDI moves fast, so lead the turn earlier.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>NDB with the RMI</h3>
+        <ul>
+          <li>Needle head = QDM. Needle tail = QDR.</li>
+          <li><b>Inbound:</b> you are established when the head points at the given QDM and your heading ≈ QDM (no wind).</li>
+          <li><b>Outbound:</b> you are established when the tail points at the given QDR.</li>
+          <li>Remember: <i>push the head, pull the tail</i>. During an intercept the head moves away from your heading and the tail moves toward it.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>ILS approach</h3>
+        <ul>
+          <li>The LOC gives lateral guidance, the GS gives vertical guidance (usually 3°).</li>
+          <li>ATC normally vectors you to intercept the LOC at 30° or less.</li>
+          <li>Intercept the GS from below: hold altitude until the GS diamond comes down to the center.</li>
+          <li>Descent rate ≈ <code>groundspeed × 5</code> fpm. Height on the GS ≈ <code>300 ft per NM</code>.</li>
+          <li>CAT I: at the 200 ft DA, LOC and GS must be within 1 dot. If not, fly the missed approach.</li>
+        </ul>
+      </article>
+      <p class="note">Wind correction: wind correction angle ≈ (crosswind ÷ TAS) × 60. This simulator keeps things simple (no magnetic variation, no DME slant range, fixed 3°/second turn rate). Use it to understand the concepts. It does not replace training with an instructor or a certified simulator.</p>
+    </div>
   </section>
 </div>
 
@@ -275,6 +357,98 @@ const css=getComputedStyle(document.documentElement);
 const C={};['bg','panel','line','bezel','face','fg','muted','mag','cyan','green','amber','red'].forEach(k=>C[k]=css.getPropertyValue('--'+k).trim());
 const FONT="'B612 Mono', ui-monospace, Consolas, monospace";
 const EST_NEED=20;
+
+/* ---------- language ---------- */
+const I18N={
+  id:{
+    eyebrow:'Latihan intercept & approach · VOR · NDB · ILS',
+    modesAria:'Mode latihan',instAria:'Instrumen',mapAria:'Peta posisi',sideAria:'Instruksi dan kontrol',learnAria:'Materi',
+    wind:'ANGIN',retry:'Ulangi skenario',newScn:'Skenario baru',progTitle:'Waktu established',instr:'Instruksi',
+    hint:'Petunjuk',pause:'Jeda',resume:'Lanjut',paused:'JEDA',optWind:'Angin acak',optMap:'Tampilkan peta',
+    hsiVor:'HSI · NAV1 VOR',hsiNdb:'HSI · NAV1 (tidak ada VOR)',hsiIls:r=>'HSI · NAV1 ILS RWY '+r,
+    rmiStd:'RMI · jarum ke stasiun',rmiIls:'RMI · locator di threshold',
+    chipSearch:'MENCARI',chipNear:'MENDEKATI',chipEst:'ESTABLISHED',stable:n=>'stabil '+n+' s',
+    mapNote:'N ↑  ·  garis hijau = track 1 menit',mapHidden:'Peta disembunyikan',mapHidden2:'Terbang hanya dengan HSI dan RMI',
+    left:'kiri',right:'kanan',
+    vorOut:R=>[`Intercept <b>radial ${R}</b> outbound dari VOR.`,`Set CRS ${R}, flag FROM. Track yang dituju ${R}°.`],
+    vorIn:(R,c)=>[`Intercept <b>radial ${R}</b> inbound ke VOR.`,`Set CRS ${c}, flag TO. Track yang dituju ${c}°.`],
+    ndbOut:R=>[`Intercept <b>QDR ${R}</b> outbound dari NDB.`,`Tidak ada CDI. Established saat ekor jarum RMI menunjuk ${R}.`],
+    ndbIn:c=>[`Intercept <b>QDM ${c}</b> inbound ke NDB.`,`Tidak ada CDI. Established saat kepala jarum RMI menunjuk ${c}.`],
+    ils:(h,r,c)=>[`ATC: “Fly heading <b>${h}</b>, maintain 2500 ft until established, cleared ILS approach runway <b>${r}</b>.”`,`Set CRS ${c} (front course). Atur V/S sendiri untuk mengikuti glideslope 3°.`],
+    critVor:n=>`Lolos: dalam ±2,5° dari radial, track ±12°, selama ${n} detik.`,
+    critNdb:n=>`Lolos: dalam ±2,5° dari garis bearing, track ±12°, selama ${n} detik.`,
+    critIls:'Lolos: di DA 200 ft, LOC dan GS masing-masing ≤ 1 dot.',
+    resDA:'Stabil di DA',resMissed:'Missed approach',resOut:'Keluar area',resEst:'Established',resPassed:'Melewati stasiun',resFar:'Terlalu jauh',resTime:'Waktu habis',
+    txtDA:(d,l,g,t)=>`Runway in sight di 200 ft, ${d} NM dari threshold. LOC ${l} dot, GS ${g} dot. Waktu ${t}.`,
+    whyLoc:'LOC lebih dari 1 dot',whyLow:'terlalu rendah di bawah glideslope',whyGs:'GS lebih dari 1 dot',
+    txtUnstable:(w,d,a)=>`Di 200 ft pendekatan tidak stabil: ${w}. Pada jarak ${d} NM, tinggi glideslope seharusnya sekitar ${a} ft.`,
+    txtHigh:'Melewati threshold sebelum turun ke 200 ft. Mulai turun saat diamond GS mencapai tengah.',
+    txtOut:'Pesawat terlalu jauh dari bandara. Ikuti heading intercept dari ATC.',
+    estWhat:(type,dir,R,c)=>(type==='vor'?'radial '+R:(dir==='in'?'QDM '+c:'QDR '+R))+' '+(dir==='in'?'inbound':'outbound'),
+    txtEst:(w,t)=>`Established di ${w} dalam ${t}.`,
+    txtObs:(o,c)=>` Catatan: CRS masih ${o}, seharusnya ${c}.`,
+    txtPassed:'Pesawat melewati stasiun sebelum established inbound. Intercept lebih awal dengan sudut yang lebih besar.',
+    txtFar:'Lebih dari 40 NM dari stasiun. Cek lagi orientasi: di radial mana kamu sekarang?',
+    txtTime:'15 menit berlalu tanpa established.',
+    hintIls:(side,along,ih,c,gsAlt,alt,vs)=>`Kamu di sebelah <b>${side}</b> centerline, ${along} NM dari threshold. Intercept LOC dengan heading <b>${ih}</b>. Saat CDI mulai bergerak dari tepi, belok ke <b>${c}</b>. Tinggi glideslope di jarak ini ≈ <b>${gsAlt} ft</b>; kamu di ${alt} ft. Saat diamond di tengah, turun sekitar <b>${vs} fpm</b>.`,
+    hintPos:(type,r,q,d,side,c,diff,ang,ih)=>`Posisi sekarang: ${type==='vor'?`radial <b>${r}</b>`:`QDR <b>${r}</b> (QDM ${q})`}, ${d} NM. Garis yang diminta ada di sebelah <b>${side}</b> pesawat (dilihat searah track ${c}). Selisih ${diff}° → sudut intercept <b>${ang}°</b> → heading <b>${ih}</b>. `,
+    hintVor:(c,tf)=>`Set CRS ${c} (${tf}). Saat CDI keluar dari full scale dan mendekati 1 dot, mulai belok ke ${c}.`,
+    hintNdbIn:(ih,c)=>`Pada heading ${ih}, kepala jarum RMI akan bergerak menuju ${c}. Mulai belok ke ${c} saat kepala jarum sekitar 5° sebelum ${c}.`,
+    hintNdbOut:(c,R)=>`Belok ke ${c} sedikit sebelum ekor jarum RMI menunjuk ${R}.`
+  },
+  en:{
+    eyebrow:'Intercept & approach practice · VOR · NDB · ILS',
+    modesAria:'Training mode',instAria:'Instruments',mapAria:'Position map',sideAria:'Instructions and controls',learnAria:'Lessons',
+    wind:'WIND',retry:'Retry scenario',newScn:'New scenario',progTitle:'Time established',instr:'Instructions',
+    hint:'Hint',pause:'Pause',resume:'Resume',paused:'PAUSED',optWind:'Random wind',optMap:'Show map',
+    hsiVor:'HSI · NAV1 VOR',hsiNdb:'HSI · NAV1 (no VOR)',hsiIls:r=>'HSI · NAV1 ILS RWY '+r,
+    rmiStd:'RMI · needle to station',rmiIls:'RMI · locator at threshold',
+    chipSearch:'SEARCHING',chipNear:'CLOSING IN',chipEst:'ESTABLISHED',stable:n=>'stable '+n+' s',
+    mapNote:'N ↑  ·  green line = 1-min track',mapHidden:'Map hidden',mapHidden2:'Fly using only the HSI and RMI',
+    left:'left',right:'right',
+    vorOut:R=>[`Intercept <b>radial ${R}</b> outbound from the VOR.`,`Set CRS ${R}, FROM flag. Target track ${R}°.`],
+    vorIn:(R,c)=>[`Intercept <b>radial ${R}</b> inbound to the VOR.`,`Set CRS ${c}, TO flag. Target track ${c}°.`],
+    ndbOut:R=>[`Intercept <b>QDR ${R}</b> outbound from the NDB.`,`No CDI. You are established when the RMI needle tail points at ${R}.`],
+    ndbIn:c=>[`Intercept <b>QDM ${c}</b> inbound to the NDB.`,`No CDI. You are established when the RMI needle head points at ${c}.`],
+    ils:(h,r,c)=>[`ATC: “Fly heading <b>${h}</b>, maintain 2500 ft until established, cleared ILS approach runway <b>${r}</b>.”`,`Set CRS ${c} (front course). Use V/S to follow the 3° glideslope.`],
+    critVor:n=>`Pass: within ±2.5° of the radial, track within ±12°, for ${n} seconds.`,
+    critNdb:n=>`Pass: within ±2.5° of the bearing line, track within ±12°, for ${n} seconds.`,
+    critIls:'Pass: at the 200 ft DA, LOC and GS each within 1 dot.',
+    resDA:'Stable at DA',resMissed:'Missed approach',resOut:'Out of area',resEst:'Established',resPassed:'Passed the station',resFar:'Too far',resTime:'Time is up',
+    txtDA:(d,l,g,t)=>`Runway in sight at 200 ft, ${d} NM from the threshold. LOC ${l} dot, GS ${g} dot. Time ${t}.`,
+    whyLoc:'LOC more than 1 dot',whyLow:'too low, below the glideslope',whyGs:'GS more than 1 dot',
+    txtUnstable:(w,d,a)=>`Unstable at 200 ft: ${w}. At ${d} NM, the glideslope height should be about ${a} ft.`,
+    txtHigh:'Crossed the threshold before descending to 200 ft. Start descending when the GS diamond reaches the center.',
+    txtOut:'The aircraft is too far from the airport. Follow the ATC intercept heading.',
+    estWhat:(type,dir,R,c)=>(type==='vor'?'radial '+R:(dir==='in'?'QDM '+c:'QDR '+R))+' '+(dir==='in'?'inbound':'outbound'),
+    txtEst:(w,t)=>`Established on ${w} in ${t}.`,
+    txtObs:(o,c)=>` Note: CRS is still ${o}; it should be ${c}.`,
+    txtPassed:'You passed over the station before getting established inbound. Intercept earlier with a bigger angle.',
+    txtFar:'More than 40 NM from the station. Check your orientation again: which radial are you on?',
+    txtTime:'15 minutes passed without getting established.',
+    hintIls:(side,along,ih,c,gsAlt,alt,vs)=>`You are <b>${side}</b> of the centerline, ${along} NM from the threshold. Intercept the LOC on heading <b>${ih}</b>. When the CDI starts moving off the stop, turn to <b>${c}</b>. Glideslope height at this distance ≈ <b>${gsAlt} ft</b>; you are at ${alt} ft. When the diamond is centered, descend at about <b>${vs} fpm</b>.`,
+    hintPos:(type,r,q,d,side,c,diff,ang,ih)=>`Current position: ${type==='vor'?`radial <b>${r}</b>`:`QDR <b>${r}</b> (QDM ${q})`}, ${d} NM. The target line is to your <b>${side}</b> (looking along track ${c}). ${diff}° off → intercept angle <b>${ang}°</b> → heading <b>${ih}</b>. `,
+    hintVor:(c,tf)=>`Set CRS ${c} (${tf}). When the CDI comes off full scale and gets close to 1 dot, start turning to ${c}.`,
+    hintNdbIn:(ih,c)=>`On heading ${ih}, the RMI needle head will move toward ${c}. Start turning to ${c} when the head is about 5° before ${c}.`,
+    hintNdbOut:(c,R)=>`Turn to ${c} just before the RMI needle tail points at ${R}.`
+  }
+};
+let LANG='id';
+const tr=(k,...a)=>{const v=I18N[LANG][k];return typeof v==='function'?v(...a):v};
+
+function applyLang(l){
+  LANG=l;document.documentElement.lang=l;
+  try{localStorage.setItem('itr-lang',l)}catch(e){}
+  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===l?'true':'false'));
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
+  document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',tr(el.dataset.i18nAria)));
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>el.setAttribute('title',tr(el.dataset.i18nTitle)));
+  document.querySelectorAll('[data-lang-block]').forEach(el=>{el.hidden=el.dataset.langBlock!==l});
+  $('pause').textContent=S.paused?tr('resume'):tr('pause');
+  if(S.task)renderBrief();
+  if(S.done)showResult();
+  if(!$('hint').hidden)hint();
+}
 
 const S={mode:'vor',paused:false,rate:1,windOn:false,mapOn:true,
   ac:{x:0,y:0,hdg:0,bug:0,tas:120,alt:4000,vs:0},obs:0,wind:{dir:0,spd:0},
@@ -321,23 +495,13 @@ function renderBrief(){
   const t=S.task, isIls=t.type==='ils';
   $('vsRow').hidden=!isIls;
   $('chip2').hidden=!isIls;
-  $('hsiLbl').textContent=t.type==='ndb'?'HSI · NAV1 (tidak ada VOR)':isIls?'HSI · NAV1 ILS RWY '+t.rwy:'HSI · NAV1 VOR';
-  $('rmiLbl').textContent=t.type==='ils'?'RMI · locator di threshold':'RMI · jarum ke stasiun';
-  let b,s,c;
-  if(t.type==='vor'){
-    if(t.dir==='out'){b=`Intercept <b>radial ${h3(t.R)}</b> outbound dari VOR.`;s=`Set CRS ${h3(t.R)}, flag FROM. Track yang dituju ${h3(t.R)}°.`;}
-    else{b=`Intercept <b>radial ${h3(t.R)}</b> inbound ke VOR.`;s=`Set CRS ${h3(t.course)}, flag TO. Track yang dituju ${h3(t.course)}°.`;}
-    c=`Lolos: dalam ±2,5° dari radial, track ±12°, selama ${EST_NEED} detik.`;
-  }else if(t.type==='ndb'){
-    if(t.dir==='out'){b=`Intercept <b>QDR ${h3(t.R)}</b> outbound dari NDB.`;s=`Tidak ada CDI. Established saat ekor jarum RMI menunjuk ${h3(t.R)}.`;}
-    else{b=`Intercept <b>QDM ${h3(t.course)}</b> inbound ke NDB.`;s=`Tidak ada CDI. Established saat kepala jarum RMI menunjuk ${h3(t.course)}.`;}
-    c=`Lolos: dalam ±2,5° dari garis bearing, track ±12°, selama ${EST_NEED} detik.`;
-  }else{
-    b=`ATC: “Fly heading <b>${h3(t.ih)}</b>, maintain 2500 ft until established, cleared ILS approach runway <b>${t.rwy}</b>.”`;
-    s=`Set CRS ${h3(t.crs)} (front course). Atur V/S sendiri untuk mengikuti glideslope 3°.`;
-    c='Lolos: di DA 200 ft, LOC dan GS masing-masing ≤ 1 dot.';
-  }
-  $('brief').innerHTML=b;$('sub').textContent=s;$('criteria').textContent=c;
+  $('hsiLbl').textContent=t.type==='ndb'?tr('hsiNdb'):isIls?tr('hsiIls',t.rwy):tr('hsiVor');
+  $('rmiLbl').textContent=isIls?tr('rmiIls'):tr('rmiStd');
+  let bs,c;
+  if(t.type==='vor'){bs=t.dir==='out'?tr('vorOut',h3(t.R)):tr('vorIn',h3(t.R),h3(t.course));c=tr('critVor',EST_NEED);}
+  else if(t.type==='ndb'){bs=t.dir==='out'?tr('ndbOut',h3(t.R)):tr('ndbIn',h3(t.course));c=tr('critNdb',EST_NEED);}
+  else{bs=tr('ils',h3(t.ih),t.rwy,h3(t.crs));c=tr('critIls');}
+  $('brief').innerHTML=bs[0];$('sub').textContent=bs[1];$('criteria').textContent=c;
 }
 
 /* ---------- navigation math ---------- */
@@ -383,30 +547,37 @@ function evaluate(dt,o){
     S.est=ok?S.est+dt:0;
     if(a.alt<=200&&o.along>0){
       const locOk=o.locValid&&Math.abs(o.locE)<=1.25,gsOk=o.gsDots!==null&&Math.abs(o.gsDots)<=1;
-      if(locOk&&gsOk)finish(true,'Stabil di DA',`Runway in sight di 200 ft, ${o.along.toFixed(2)} NM dari threshold. LOC ${Math.abs(o.locE/1.25).toFixed(1)} dot, GS ${Math.abs(o.gsDots).toFixed(1)} dot. Waktu ${mmss(S.t)}.`);
+      if(locOk&&gsOk)finish(true,'resDA',['txtDA',o.along.toFixed(2),Math.abs(o.locE/1.25).toFixed(1),Math.abs(o.gsDots).toFixed(1),mmss(S.t)]);
       else{
-        const why=[];if(!locOk)why.push('LOC lebih dari 1 dot');if(!gsOk)why.push(o.gsE!==null&&o.gsE<0?'terlalu rendah di bawah glideslope':'GS lebih dari 1 dot');
-        finish(false,'Missed approach',`Di 200 ft pendekatan tidak stabil: ${why.join(', ')}. Pada jarak ${o.along.toFixed(1)} NM, tinggi glideslope seharusnya sekitar ${Math.round(o.along*318)} ft.`);
+        const why=[];if(!locOk)why.push('whyLoc');if(!gsOk)why.push(o.gsE!==null&&o.gsE<0?'whyLow':'whyGs');
+        finish(false,'resMissed',['txtUnstable',{why},o.along.toFixed(1),Math.round(o.along*318)]);
       }
-    }else if(o.along<0)finish(false,'Missed approach','Melewati threshold sebelum turun ke 200 ft. Mulai turun saat diamond GS mencapai tengah.');
-    else if(o.dist>28)finish(false,'Keluar area','Pesawat terlalu jauh dari bandara. Ikuti heading intercept dari ATC.');
+    }else if(o.along<0)finish(false,'resMissed',['txtHigh']);
+    else if(o.dist>28)finish(false,'resOut',['txtOut']);
   }else{
     const e=n180(o.radial-t.R),te=n180(S.trk-t.course);
     const ok=Math.abs(e)<=2.5&&Math.abs(te)<=12&&o.dist>0.8;
     S.est=ok?S.est+dt:0;
     if(S.est>=EST_NEED){
-      let msg=`Established di ${t.type==='vor'?'radial '+h3(t.R):(t.dir==='in'?'QDM '+h3(t.course):'QDR '+h3(t.R))} ${t.dir==='in'?'inbound':'outbound'} dalam ${mmss(S.t)}.`;
-      if(t.type==='vor'&&Math.abs(n180(S.obs-t.course))>2)msg+=` Catatan: CRS masih ${h3(S.obs)}, seharusnya ${h3(t.course)}.`;
-      finish(true,'Established',msg);
+      const obsWrong=t.type==='vor'&&Math.abs(n180(S.obs-t.course))>2;
+      finish(true,'resEst',['txtEst',{est:[t.type,t.dir,h3(t.R),h3(t.course)]},mmss(S.t)],obsWrong?['txtObs',h3(S.obs),h3(t.course)]:null);
     }
-    else if(t.dir==='in'&&o.dist<0.8&&S.t>5)finish(false,'Melewati stasiun','Pesawat melewati stasiun sebelum established inbound. Intercept lebih awal dengan sudut yang lebih besar.');
-    else if(o.dist>40)finish(false,'Terlalu jauh','Lebih dari 40 NM dari stasiun. Cek lagi orientasi: di radial mana kamu sekarang?');
-    else if(S.t>900)finish(false,'Waktu habis','15 menit berlalu tanpa established.');
+    else if(t.dir==='in'&&o.dist<0.8&&S.t>5)finish(false,'resPassed',['txtPassed']);
+    else if(o.dist>40)finish(false,'resFar',['txtFar']);
+    else if(S.t>900)finish(false,'resTime',['txtTime']);
   }
 }
-function finish(ok,title,text){
-  S.done={ok};const r=$('result');r.className='result '+(ok?'ok':'bad');
-  $('resTitle').textContent=title;$('resText').textContent=text;r.hidden=false;
+/* result text is stored as translation keys so it can be re-rendered when the language changes */
+function finish(ok,titleKey,textSpec,extraSpec){S.done={ok,titleKey,textSpec,extraSpec};showResult();}
+function renderSpec(spec){
+  const [k,...args]=spec;
+  return tr(k,...args.map(v=>v&&v.why?v.why.map(w=>tr(w)).join(', '):v&&v.est?tr('estWhat',...v.est):v));
+}
+function showResult(){
+  const d=S.done,r=$('result');r.className='result '+(d.ok?'ok':'bad');
+  $('resTitle').textContent=tr(d.titleKey);
+  $('resText').textContent=renderSpec(d.textSpec)+(d.extraSpec?renderSpec(d.extraSpec):'');
+  r.hidden=false;
 }
 
 /* ---------- hint ---------- */
@@ -414,18 +585,15 @@ function hint(){
   const t=S.task,o=nav(),a=S.ac;let h;
   if(t.type==='ils'){
     const u=unit(t.crs),cross=a.x*u.y-a.y*u.x;
-    const side=cross>0?'kanan':'kiri',ih=n360(t.crs+(cross>0?-30:30));
-    const gsAlt=Math.max(0,Math.round(o.along*318));
-    h=`Kamu di sebelah <b>${side}</b> centerline, ${o.along.toFixed(1)} NM dari threshold. Intercept LOC dengan heading <b>${h3(ih)}</b>. Saat CDI mulai bergerak dari tepi, belok ke <b>${h3(t.crs)}</b>. Tinggi glideslope di jarak ini ≈ <b>${gsAlt} ft</b>; kamu di ${Math.round(a.alt)} ft. Saat diamond di tengah, turun sekitar <b>${Math.round(S.gs*5/50)*50} fpm</b>.`;
+    const ih=n360(t.crs+(cross>0?-30:30));
+    h=tr('hintIls',tr(cross>0?'right':'left'),o.along.toFixed(1),h3(ih),h3(t.crs),Math.max(0,Math.round(o.along*318)),Math.round(a.alt),Math.round(S.gs*5/50)*50);
   }else{
     const u=unit(t.course),cross=a.x*u.y-a.y*u.x,diff=Math.abs(n180(o.radial-t.R));
-    let ang=t.dir==='in'?clamp(Math.round(diff*2/5)*5,20,90):(diff>=15?45:30);
+    const ang=t.dir==='in'?clamp(Math.round(diff*2/5)*5,20,90):(diff>=15?45:30);
     const ih=n360(t.course+(cross>0?-ang:ang));
-    const where=t.type==='vor'?`radial <b>${h3(o.radial)}</b>`:`QDR <b>${h3(o.radial)}</b> (QDM ${h3(o.qdm)})`;
-    h=`Posisi sekarang: ${where}, ${o.dist.toFixed(1)} NM. Garis yang diminta ada di sebelah <b>${cross>0?'kiri':'kanan'}</b> pesawat (dilihat searah track ${h3(t.course)}). Selisih ${Math.round(diff)}° → sudut intercept <b>${ang}°</b> → heading <b>${h3(ih)}</b>. `;
-    h+=t.type==='vor'?`Set CRS ${h3(t.course)} (${t.dir==='in'?'TO':'FROM'}). Saat CDI keluar dari full scale dan mendekati 1 dot, mulai belok ke ${h3(t.course)}.`
-      :(t.dir==='in'?`Pada heading ${h3(ih)}, kepala jarum RMI akan bergerak menuju ${h3(t.course)}. Mulai belok ke ${h3(t.course)} saat kepala jarum sekitar 5° sebelum ${h3(t.course)}.`
-        :`Belok ke ${h3(t.course)} sedikit sebelum ekor jarum RMI menunjuk ${h3(t.R)}.`);
+    h=tr('hintPos',t.type,h3(o.radial),h3(o.qdm),o.dist.toFixed(1),tr(cross>0?'left':'right'),h3(t.course),Math.round(diff),ang,h3(ih));
+    h+=t.type==='vor'?tr('hintVor',h3(t.course),t.dir==='in'?'TO':'FROM')
+      :(t.dir==='in'?tr('hintNdbIn',h3(ih),h3(t.course)):tr('hintNdbOut',h3(t.course),h3(t.R)));
   }
   const el=$('hint');el.innerHTML=h;el.hidden=false;
 }
@@ -512,44 +680,35 @@ function drawMap(o){
   const s=Math.min(w,h)/2/S.vc.half;
   const P=(x,y)=>[w/2+(x-S.vc.x)*s,h/2-(y-S.vc.y)*s];
   const st=P(0,0);
-  // rings
   const stepNM=S.vc.half>25?10:5;ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.fillStyle=C.muted;ctx.font=`11px ${FONT}`;ctx.textAlign='left';ctx.textBaseline='bottom';
   for(let r=stepNM;r<=60;r+=stepNM){circle(ctx,st[0],st[1],r*s);ctx.stroke();ctx.fillText(r+' NM',st[0]+r*s*0.707+3,st[1]-r*s*0.707);}
-  // compass rose ticks around station (radial reference)
   for(let i=0;i<360;i+=30){const u=unit(i),r1=stepNM*s*0.82,r2=stepNM*s;ctx.beginPath();ctx.moveTo(st[0]+u.x*r1,st[1]-u.y*r1);ctx.lineTo(st[0]+u.x*r2,st[1]-u.y*r2);ctx.stroke();}
-  // target line
   ctx.strokeStyle=C.mag;ctx.lineWidth=2;ctx.setLineDash([8,6]);
   if(t.type==='ils'){
     const b=unit(t.crs+180),e=P(b.x*30,b.y*30);ctx.beginPath();ctx.moveTo(st[0],st[1]);ctx.lineTo(e[0],e[1]);ctx.stroke();ctx.setLineDash([]);
     const u=unit(t.crs),re=P(u.x*1.5,u.y*1.5);ctx.strokeStyle=C.fg;ctx.lineWidth=Math.max(4,0.05*s);ctx.beginPath();ctx.moveTo(st[0],st[1]);ctx.lineTo(re[0],re[1]);ctx.stroke();
-    // GS intercept at 2500 ft
     const gi=2500/318,gp=P(b.x*gi,b.y*gi);ctx.fillStyle=C.mag;ctx.beginPath();ctx.moveTo(gp[0],gp[1]-6);ctx.lineTo(gp[0]+5,gp[1]);ctx.lineTo(gp[0],gp[1]+6);ctx.lineTo(gp[0]-5,gp[1]);ctx.closePath();ctx.fill();
     ctx.fillStyle=C.fg;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('RWY '+t.rwy,re[0]+8,re[1]);
   }else{
     const u=unit(t.R),e=P(u.x*60,u.y*60);ctx.beginPath();ctx.moveTo(st[0],st[1]);ctx.lineTo(e[0],e[1]);ctx.stroke();ctx.setLineDash([]);
-    const m=P(u.x*Math.max(4,S.vc.half*0.5),u.y*Math.max(4,S.vc.half*0.5)),dirA=t.course;
-    planeArrow(ctx,m[0],m[1],dirA);
+    const m=P(u.x*Math.max(4,S.vc.half*0.5),u.y*Math.max(4,S.vc.half*0.5));
+    planeArrow(ctx,m[0],m[1],t.course);
     ctx.fillStyle=C.mag;ctx.textAlign='left';ctx.textBaseline='bottom';
     ctx.fillText((t.type==='vor'?'R-':'QDR ')+h3(t.R),m[0]+10,m[1]-8);
-    // station symbol
     ctx.strokeStyle=C.cyan;ctx.fillStyle=C.cyan;ctx.lineWidth=2;
     if(t.type==='vor'){const hx=[];for(let i=0;i<6;i++){const an=(i*60+30)*D2R;hx.push([st[0]+Math.cos(an)*8,st[1]+Math.sin(an)*8]);}poly(ctx,hx);ctx.stroke();circle(ctx,st[0],st[1],2);ctx.fill();}
     else{for(let r=4;r<=12;r+=4)for(let i=0;i<360;i+=30){const an=(i+r*7)*D2R;circle(ctx,st[0]+Math.cos(an)*r,st[1]+Math.sin(an)*r,1.1);ctx.fill();}circle(ctx,st[0],st[1],2.5);ctx.fill();}
   }
-  // trail
   ctx.fillStyle=C.cyan;ctx.globalAlpha=.55;for(const p of S.trail){const q=P(p[0],p[1]);ctx.fillRect(q[0]-1,q[1]-1,2,2);}ctx.globalAlpha=1;
-  // track vector (1 min)
   const ap=P(a.x,a.y),tv=unit(S.trk),L=S.gs/60;
   ctx.strokeStyle=C.green;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(ap[0],ap[1]);ctx.lineTo(ap[0]+tv.x*L*s,ap[1]-tv.y*L*s);ctx.stroke();
   planeShape(ctx,ap[0],ap[1],a.hdg,11,C.fg);
-  // wind
   if(S.wind.spd){const wx=w-34,wy=34,u=unit(S.wind.dir+180);ctx.strokeStyle=C.cyan;ctx.fillStyle=C.cyan;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wx-u.x*16,wy+u.y*16);ctx.lineTo(wx+u.x*16,wy-u.y*16);ctx.stroke();planeArrow(ctx,wx+u.x*16,wy-u.y*16,S.wind.dir+180,C.cyan);ctx.font=`11px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(h3(S.wind.dir)+'/'+S.wind.spd,wx,wy+22);}
-  // north
-  ctx.fillStyle=C.muted;ctx.font=`11px ${FONT}`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('N ↑  ·  garis hijau = track 1 menit',10,10);
+  ctx.fillStyle=C.muted;ctx.font=`11px ${FONT}`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(tr('mapNote'),10,10);
   if(!S.mapOn){
     ctx.fillStyle=C.face;ctx.fillRect(0,0,w,h);
     ctx.fillStyle=C.muted;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`14px ${FONT}`;
-    ctx.fillText('Peta disembunyikan',w/2,h/2-10);ctx.font=`12px ${FONT}`;ctx.fillText('Terbang hanya dengan HSI dan RMI',w/2,h/2+12);
+    ctx.fillText(tr('mapHidden'),w/2,h/2-10);ctx.font=`12px ${FONT}`;ctx.fillText(tr('mapHidden2'),w/2,h/2+12);
   }
 }
 function planeArrow(ctx,x,y,dir,col){
@@ -562,16 +721,16 @@ function readouts(o){
   $('rAlt').textContent=Math.round(a.alt);$('rVs').textContent=(a.vs>0?'+':'')+a.vs;
   $('rWind').textContent=S.wind.spd?h3(S.wind.dir)+'° / '+S.wind.spd+' kt':'CALM';
   $('vBug').textContent=h3(a.bug);$('vCrs').textContent=h3(S.obs);$('vVs').textContent=(a.vs>0?'+':'')+a.vs;
-  $('clock').textContent=mmss(S.t)+(S.paused?' · JEDA':'');
+  $('clock').textContent=mmss(S.t)+(S.paused?' · '+tr('paused'):'');
   const c1=$('chip1'),c2=$('chip2');
   if(t.type==='ils'){
     const locCap=o.locValid&&Math.abs(o.dots)<1,gsCap=o.gsDots!==null&&Math.abs(o.gsDots)<1;
     c1.textContent=locCap?'LOC ✓':'LOC ARM';c1.className='chip '+(locCap?'on':'warn');
     c2.textContent=gsCap?'GS ✓':'GS ARM';c2.className='chip '+(gsCap?'on':'warn');
-    $('progBar').style.width=Math.min(100,S.est/EST_NEED*100)+'%';$('progTxt').textContent='stabil '+Math.floor(S.est)+' s';
+    $('progBar').style.width=Math.min(100,S.est/EST_NEED*100)+'%';$('progTxt').textContent=tr('stable',Math.floor(S.est));
   }else{
     const e=Math.abs(n180(o.radial-t.R));
-    c1.textContent=S.est>0?'ESTABLISHED':(e<10?'MENDEKATI':'MENCARI');c1.className='chip '+(S.est>0?'on':e<10?'warn':'');
+    c1.textContent=S.est>0?tr('chipEst'):(e<10?tr('chipNear'):tr('chipSearch'));c1.className='chip '+(S.est>0?'on':e<10?'warn':'');
     $('progBar').style.width=Math.min(100,S.est/EST_NEED*100)+'%';$('progTxt').textContent=Math.floor(Math.min(S.est,EST_NEED))+'/'+EST_NEED+' s';
   }
 }
@@ -594,12 +753,13 @@ document.querySelectorAll('[data-bug]').forEach(b=>b.addEventListener('click',()
 document.querySelectorAll('[data-crs]').forEach(b=>b.addEventListener('click',()=>crsAdj(+b.dataset.crs)));
 document.querySelectorAll('[data-vs]').forEach(b=>b.addEventListener('click',()=>vsAdj(+b.dataset.vs)));
 document.querySelectorAll('[data-rate]').forEach(b=>b.addEventListener('click',()=>{S.rate=+b.dataset.rate;document.querySelectorAll('[data-rate]').forEach(x=>x.classList.toggle('sel',x===b));}));
-function togglePause(){S.paused=!S.paused;$('pause').textContent=S.paused?'Lanjut':'Jeda';}
+function togglePause(){S.paused=!S.paused;$('pause').textContent=S.paused?tr('resume'):tr('pause');}
 $('pause').addEventListener('click',togglePause);
 $('newBtn').addEventListener('click',newScenario);$('next').addEventListener('click',newScenario);$('retry').addEventListener('click',retry);
 $('hintBtn').addEventListener('click',hint);
 $('optWind').addEventListener('change',e=>{S.windOn=e.target.checked;newScenario();});
 $('optMap').addEventListener('change',e=>{S.mapOn=e.target.checked;});
+document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{
   S.mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-selected',x===b?'true':'false'));
   try{localStorage.setItem('itr-mode',S.mode)}catch(e){}
@@ -621,6 +781,9 @@ document.addEventListener('keydown',e=>{
 });
 
 try{const m=localStorage.getItem('itr-mode');if(m&&['vor','ndb','ils'].includes(m)){S.mode=m;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-selected',x.dataset.mode===m?'true':'false'));}}catch(e){}
+let startLang=(navigator.language||'').toLowerCase().startsWith('id')?'id':'en';
+try{const l=localStorage.getItem('itr-lang');if(l==='id'||l==='en')startLang=l;}catch(e){}
+applyLang(startLang);
 newScenario();
 requestAnimationFrame(frame);
 </script>
