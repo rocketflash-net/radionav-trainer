@@ -1,6 +1,6 @@
-# Intercept & Approach Trainer
+# RadioNav Trainer
 
-Simulator web sederhana untuk latihan navigasi radio:
+Simulator web sederhana untuk latihan intercept dan approach dengan navigasi radio:
 
 - **VOR Radial** — intercept radial inbound/outbound dengan HSI (CRS/OBS, CDI, TO/FROM)
 - **NDB / ADF** — intercept QDM/QDR hanya dengan RMI
