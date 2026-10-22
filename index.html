@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intercept &amp; Approach Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=B612+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: cockpit panel — instruments left, moving map center, briefing + controls right; theory below. Single dark look by choice (avionics). */
+:root{
+  --bg:#0d1013; --panel:#15191e; --panel2:#1b2027; --line:#29313a; --bezel:#07090b; --face:#111418;
+  --fg:#e9e6dd; --muted:#8a949e; --mag:#ff5ad9; --cyan:#3fd7ef; --green:#4ce08e; --amber:#ffb627; --red:#ff5a5a;
+  --font:'B612', 'Segoe UI', system-ui, sans-serif; --mono:'B612 Mono', ui-monospace, Consolas, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--font);font-size:14px;line-height:1.5;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:16px 40px}
+.wrap{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+h1 span{color:var(--mag)}
+.modes{display:flex;gap:4px;background:var(--bezel);border:1px solid var(--line);border-radius:8px;padding:4px;flex-wrap:wrap}
+.modes button{font:inherit;font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--muted);background:transparent;border:0;border-radius:5px;padding:8px 12px;cursor:pointer}
+.modes button[aria-selected="true"]{background:var(--panel2);color:var(--green);box-shadow:inset 0 0 0 1px var(--line)}
+.modes button:focus-visible,.btn:focus-visible,.chk input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+.sim{display:grid;grid-template-columns:290px minmax(0,1fr) 330px;gap:12px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.inst{display:flex;flex-direction:column;gap:8px}
+.gauges{display:grid;grid-template-columns:1fr;gap:8px;justify-items:center}
+.gauge{width:100%;display:flex;flex-direction:column;gap:4px;align-items:center}
+.gauge .eyebrow{align-self:flex-start}
+#hsi{width:100%;aspect-ratio:1;max-width:100%;display:block}
+#rmi{width:78%;aspect-ratio:1;max-width:100%;display:block}
+.ro{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0}
+.ro div{background:var(--bezel);padding:6px 8px;display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.ro dt{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted)}
+.ro dd{margin:0;font-family:var(--mono);font-size:15px;color:var(--green);font-variant-numeric:tabular-nums}
+.ro dd.c{color:var(--cyan)}
+
+.mapwrap{position:relative;padding:0;overflow:hidden}
+#map{width:100%;aspect-ratio:1;max-height:78vh;display:block;background:var(--face)}
+.mapbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px}
+.chip{padding:3px 8px;border-radius:4px;border:1px solid var(--line);color:var(--muted);letter-spacing:.06em}
+.chip.on{color:var(--green);border-color:color-mix(in srgb,var(--green) 50%,transparent)}
+.chip.warn{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 50%,transparent)}
+.prog{flex:1;min-width:80px;height:6px;background:var(--bezel);border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--green)}
+.result{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92%,420px);background:color-mix(in srgb,var(--panel2) 94%,transparent);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.result h2{margin:0;font-size:18px}
+.result.ok h2{color:var(--green)} .result.bad h2{color:var(--amber)}
+.result p{margin:0;color:var(--fg)}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+
+.side{display:flex;flex-direction:column;gap:12px}
+.brief{background:var(--bezel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.brief p{margin:0}
+#brief{font-size:16px}
+#brief b{color:var(--mag);font-weight:700}
+#sub{color:var(--fg)}
+#criteria{color:var(--muted);font-size:12px}
+.ctl{display:flex;flex-direction:column;gap:8px}
+.knob{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center}
+.knob .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);width:34px}
+.knob .val{font-family:var(--mono);font-size:18px;text-align:center;font-variant-numeric:tabular-nums;background:var(--bezel);border:1px solid var(--line);border-radius:5px;padding:3px 0}
+.knob .grp{display:flex;gap:4px}
+.btn{font:inherit;font-family:var(--mono);font-size:12px;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:7px 9px;cursor:pointer;touch-action:manipulation;user-select:none}
+.btn:hover{border-color:var(--muted)}
+.btn:active{transform:translateY(1px)}
+.btn.pri{background:color-mix(in srgb,var(--green) 18%,var(--panel2));border-color:color-mix(in srgb,var(--green) 45%,transparent);color:var(--green)}
+.btn.sel{color:var(--cyan);border-color:var(--cyan)}
+.knob.bug .val{color:var(--cyan)} .knob.crs .val{color:var(--mag)} .knob.vs .val{color:var(--green)}
+.opts{display:flex;flex-wrap:wrap;gap:12px}
+.chk{display:flex;gap:6px;align-items:center;cursor:pointer;font-size:13px}
+.chk input{accent-color:var(--green);width:16px;height:16px}
+.hint{background:color-mix(in srgb,var(--amber) 9%,var(--bezel));border:1px solid color-mix(in srgb,var(--amber) 35%,transparent);border-radius:8px;padding:10px 12px;font-size:13px}
+.hint b{color:var(--amber)}
+.keys{font-size:12px;color:var(--muted);display:grid;grid-template-columns:auto 1fr;gap:3px 10px}
+kbd{font-family:var(--mono);font-size:11px;background:var(--bezel);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--fg)}
+
+.learn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:6px}
+.learn h2{grid-column:1/-1;margin:8px 0 0;font-size:20px}
+.learn article{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.learn h3{margin:0 0 6px;font-size:15px;color:var(--cyan)}
+.learn p,.learn li{color:#cfcbc1;max-width:65ch}
+.learn p{margin:0 0 8px}
+.learn ol,.learn ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.learn code{font-family:var(--mono);color:var(--mag);font-size:13px}
+.note{color:var(--muted);font-size:12px;grid-column:1/-1}
+
+@media (max-width:1150px){
+  .sim{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .mapwrap{grid-column:1/-1;order:-1}
+  .gauges{grid-template-columns:1fr 1fr;align-items:center}
+  #rmi{width:100%}
+  .learn{grid-template-columns:1fr 1fr}
+}
+@media (max-width:720px){
+  .sim{grid-template-columns:minmax(0,1fr)}
+  .learn{grid-template-columns:1fr}
+  h1{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){.btn:active{transform:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Latihan navigasi radio · VOR · NDB · ILS</div>
+      <h1>Intercept <span>&amp;</span> Approach Trainer</h1>
+    </div>
+    <nav class="modes" role="tablist" aria-label="Mode latihan">
+      <button role="tab" data-mode="vor" aria-selected="true">VOR RADIAL</button>
+      <button role="tab" data-mode="ndb" aria-selected="false">NDB / ADF</button>
+      <button role="tab" data-mode="ils" aria-selected="false">ILS APPROACH</button>
+    </nav>
+  </header>
+
+  <main class="sim">
+    <section class="panel inst" aria-label="Instrumen">
+      <div class="gauges">
+        <div class="gauge"><span class="eyebrow" id="hsiLbl">HSI · NAV1 VOR</span><canvas id="hsi" aria-label="Horizontal Situation Indicator"></canvas></div>
+        <div class="gauge"><span class="eyebrow" id="rmiLbl">RMI · jarum ke stasiun</span><canvas id="rmi" aria-label="Radio Magnetic Indicator"></canvas></div>
+      </div>
+      <dl class="ro">
+        <div><dt>HDG</dt><dd id="rHdg">---</dd></div>
+        <div><dt>TRK</dt><dd id="rTrk">---</dd></div>
+        <div><dt>GS kt</dt><dd id="rGs">---</dd></div>
+        <div><dt>DME NM</dt><dd id="rDme">---</dd></div>
+        <div><dt>ALT ft</dt><dd id="rAlt">---</dd></div>
+        <div><dt>V/S fpm</dt><dd id="rVs">---</dd></div>
+        <div style="grid-column:1/-1"><dt>ANGIN</dt><dd id="rWind" class="c">CALM</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel mapwrap" aria-label="Peta posisi">
+      <canvas id="map"></canvas>
+      <div id="result" class="result" hidden>
+        <h2 id="resTitle"></h2>
+        <p id="resText"></p>
+        <div class="row"><button class="btn" id="retry">Ulangi skenario</button><button class="btn pri" id="next">Skenario baru</button></div>
+      </div>
+      <div class="mapbar">
+        <span id="clock">00:00</span>
+        <span class="chip" id="chip1">MENCARI</span>
+        <span class="chip" id="chip2" hidden>GS</span>
+        <div class="prog" title="Waktu established"><i id="progBar"></i></div>
+        <span id="progTxt">0/20 s</span>
+      </div>
+    </section>
+
+    <section class="panel side" aria-label="Instruksi dan kontrol">
+      <div class="brief">
+        <div class="eyebrow">Instruksi</div>
+        <p id="brief"></p>
+        <p id="sub"></p>
+        <p id="criteria"></p>
+      </div>
+
+      <div class="ctl">
+        <div class="knob bug"><span class="lbl">HDG</span><span class="val" id="vBug">000</span>
+          <div class="grp"><button class="btn" data-bug="-10">−10</button><button class="btn" data-bug="-1">−1</button><button class="btn" data-bug="1">+1</button><button class="btn" data-bug="10">+10</button></div></div>
+        <div class="knob crs"><span class="lbl">CRS</span><span class="val" id="vCrs">000</span>
+          <div class="grp"><button class="btn" data-crs="-10">−10</button><button class="btn" data-crs="-1">−1</button><button class="btn" data-crs="1">+1</button><button class="btn" data-crs="10">+10</button></div></div>
+        <div class="knob vs" id="vsRow" hidden><span class="lbl">V/S</span><span class="val" id="vVs">0</span>
+          <div class="grp"><button class="btn" data-vs="-500">−500</button><button class="btn" data-vs="-100">−100</button><button class="btn" data-vs="100">+100</button><button class="btn" data-vs="500">+500</button></div></div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="pause">Jeda</button>
+        <button class="btn sel" data-rate="1">1×</button><button class="btn" data-rate="2">2×</button><button class="btn" data-rate="4">4×</button>
+        <button class="btn" id="hintBtn">Petunjuk</button>
+        <button class="btn pri" id="newBtn">Skenario baru</button>
+      </div>
+
+      <div class="opts">
+        <label class="chk"><input type="checkbox" id="optWind"> Angin acak</label>
+        <label class="chk"><input type="checkbox" id="optMap" checked> Tampilkan peta</label>
+      </div>
+
+      <div class="hint" id="hint" hidden></div>
+
+      <div class="keys">
+        <span><kbd>←</kbd> <kbd>→</kbd></span><span>Heading bug ±5° (Shift = ±1°)</span>
+        <span><kbd>Q</kbd> <kbd>E</kbd></span><span>Course (OBS) ±5° (Shift = ±1°)</span>
+        <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Vertical speed ±100 fpm (ILS)</span>
+        <span><kbd>Spasi</kbd></span><span>Jeda / lanjut</span>
+        <span><kbd>N</kbd> <kbd>H</kbd></span><span>Skenario baru / petunjuk</span>
+      </div>
+    </section>
+  </main>
+
+  <section class="learn" aria-label="Materi">
+    <h2>Materi singkat</h2>
+    <article>
+      <h3>Radial, QDM, QDR</h3>
+      <p><b>Radial</b> adalah garis magnetik yang keluar <i>dari</i> VOR. Radial 090 berada di timur stasiun.</p>
+      <ul>
+        <li><code>QDR</code> = bearing magnetik dari stasiun ke pesawat (setara radial, dipakai untuk NDB).</li>
+        <li><code>QDM</code> = bearing magnetik dari pesawat ke stasiun. <code>QDM = QDR ± 180</code>.</li>
+        <li>Terbang <i>inbound</i> di radial 090 berarti track 270 (QDM 270).</li>
+      </ul>
+    </article>
+    <article>
+      <h3>Membaca HSI</h3>
+      <ul>
+        <li>Panah magenta = course yang dipilih (CRS/OBS). Batang tengah = CDI.</li>
+        <li>Fly <i>toward the needle</i>: jika CDI di kanan, course ada di kanan pesawat.</li>
+        <li>Skala: VOR 5° per dot (2 dot = 10°). LOC 1,25° per dot.</li>
+        <li>Segitiga TO/FROM menunjukkan apakah course yang dipilih menuju atau menjauhi stasiun.</li>
+        <li>Untuk inbound set CRS = track inbound (flag TO). Untuk outbound set CRS = radial (flag FROM).</li>
+      </ul>
+    </article>
+    <article>
+      <h3>Langkah intercept</h3>
+      <ol>
+        <li><b>Orientasi.</b> Saya di radial berapa? Lihat ekor jarum RMI, atau putar OBS sampai CDI di tengah dengan FROM.</li>
+        <li><b>Set course</b> yang diminta.</li>
+        <li><b>Pilih heading intercept</b> = course ± sudut intercept, ke arah sisi jarum CDI.</li>
+        <li><b>Lead the turn.</b> Saat CDI mulai bergerak ke tengah, mulai belok ke course.</li>
+        <li><b>Tracking.</b> Koreksi angin, pertahankan CDI di tengah.</li>
+      </ol>
+    </article>
+    <article>
+      <h3>Memilih sudut intercept</h3>
+      <ul>
+        <li><b>Inbound:</b> sudut intercept = 2 × selisih sudut (minimal 20°, maksimal 90°). Selisih radial 20° → intercept 40°.</li>
+        <li><b>Outbound:</b> pakai 30°–45°. Makin jauh dari stasiun, radial makin renggang dan intercept terasa lambat.</li>
+        <li>Dekat stasiun, radial sangat rapat: CDI bergerak cepat, jadi lead turn lebih awal.</li>
+      </ul>
+    </article>
+    <article>
+      <h3>NDB dengan RMI</h3>
+      <ul>
+        <li>Kepala jarum = QDM. Ekor jarum = QDR.</li>
+        <li><b>Inbound:</b> established saat kepala jarum menunjuk QDM yang diminta dan heading ≈ QDM (tanpa angin).</li>
+        <li><b>Outbound:</b> established saat ekor jarum menunjuk QDR yang diminta.</li>
+        <li>Ingat: <i>push the head, pull the tail</i>. Saat intercept, kepala jarum bergerak menjauhi heading; ekor jarum bergerak mendekati.</li>
+      </ul>
+    </article>
+    <article>
+      <h3>ILS approach</h3>
+      <ul>
+        <li>LOC memberi panduan lateral, GS panduan vertikal (umumnya 3°).</li>
+        <li>ATC biasanya memberi vektor dengan sudut intercept LOC ≤ 30°.</li>
+        <li>Intercept GS dari bawah: pertahankan ketinggian sampai diamond GS turun ke tengah.</li>
+        <li>Rate turun ≈ <code>groundspeed × 5</code> fpm. Tinggi di GS ≈ <code>300 ft per NM</code>.</li>
+        <li>CAT I: di DA 200 ft, LOC dan GS harus di dalam 1 dot, kalau tidak lakukan missed approach.</li>
+      </ul>
+    </article>
+    <p class="note">Koreksi angin: wind correction angle ≈ (crosswind ÷ TAS) × 60. Simulator ini menyederhanakan banyak hal (variasi magnetik, slant range DME, kecepatan belok tetap 3°/detik). Dipakai untuk memahami konsep, bukan pengganti latihan dengan instruktur atau simulator tersertifikasi.</p>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const D2R=Math.PI/180, R2D=180/Math.PI;
+const n360=a=>((a%360)+360)%360;
+const n180=a=>{a=n360(a);return a>180?a-360:a};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const h3=a=>{let v=Math.round(n360(a));if(v===0)v=360;return String(v).padStart(3,'0')};
+const brgOf=(x,y)=>n360(Math.atan2(x,y)*R2D);
+const unit=a=>({x:Math.sin(a*D2R),y:Math.cos(a*D2R)});
+const mmss=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(Math.floor(t%60)).padStart(2,'0');
+
+const css=getComputedStyle(document.documentElement);
+const C={};['bg','panel','line','bezel','face','fg','muted','mag','cyan','green','amber','red'].forEach(k=>C[k]=css.getPropertyValue('--'+k).trim());
+const FONT="'B612 Mono', ui-monospace, Consolas, monospace";
+const EST_NEED=20;
+
+const S={mode:'vor',paused:false,rate:1,windOn:false,mapOn:true,
+  ac:{x:0,y:0,hdg:0,bug:0,tas:120,alt:4000,vs:0},obs:0,wind:{dir:0,spd:0},
+  task:null,init:null,t:0,est:0,done:null,trail:[],trailT:0,trk:0,gs:0,vc:{x:0,y:0,half:20}};
+
+/* ---------- scenarios ---------- */
+function newScenario(){
+  const m=S.mode;
+  S.wind=S.windOn?{dir:Math.round(rnd(0,35))*10,spd:Math.round(rnd(10,25))}:{dir:0,spd:0};
+  const a=S.ac;
+  if(m==='ils'){
+    const c=Math.round(rnd(1,36))*10, side=pick([-1,1]);
+    const back=unit(c+180), rt=unit(c+90), along=rnd(13,16), off=rnd(3,5)*side;
+    a.x=back.x*along+rt.x*off; a.y=back.y*along+rt.y*off;
+    const ih=n360(Math.round((c-side*30)/5)*5);
+    Object.assign(a,{hdg:ih,bug:ih,tas:110,alt:2500,vs:0});
+    S.obs=Math.round(rnd(0,35))*10;
+    S.task={type:'ils',crs:c,rwy:String(Math.round(c/10)||36).padStart(2,'0'),ih};
+  }else{
+    const R=Math.round(rnd(0,71))*5, dir=pick(['in','out']);
+    const course=dir==='out'?R:n360(R+180);
+    const rad=n360(R+pick([-1,1])*rnd(25,75)), d=rnd(8,15), p=unit(rad);
+    a.x=p.x*d; a.y=p.y*d;
+    const hd=Math.round(rnd(0,35))*10;
+    Object.assign(a,{hdg:hd,bug:hd,tas:120,alt:4000,vs:0});
+    S.obs=Math.round(rnd(0,35))*10;
+    S.task={type:m,R,dir,course};
+  }
+  S.init={ac:{...a},obs:S.obs,wind:{...S.wind},task:{...S.task}};
+  resetRun();
+}
+function retry(){
+  if(!S.init)return;
+  Object.assign(S.ac,S.init.ac);S.obs=S.init.obs;S.wind={...S.init.wind};S.task={...S.init.task};
+  resetRun();
+}
+function resetRun(){
+  S.t=0;S.est=0;S.done=null;S.trail=[];S.trailT=0;
+  S.vc={x:S.ac.x/2,y:S.ac.y/2,half:Math.max(9,Math.hypot(S.ac.x,S.ac.y)*0.6+4)};
+  $('result').hidden=true;$('hint').hidden=true;
+  renderBrief();
+}
+function renderBrief(){
+  const t=S.task, isIls=t.type==='ils';
+  $('vsRow').hidden=!isIls;
+  $('chip2').hidden=!isIls;
+  $('hsiLbl').textContent=t.type==='ndb'?'HSI · NAV1 (tidak ada VOR)':isIls?'HSI · NAV1 ILS RWY '+t.rwy:'HSI · NAV1 VOR';
+  $('rmiLbl').textContent=t.type==='ils'?'RMI · locator di threshold':'RMI · jarum ke stasiun';
+  let b,s,c;
+  if(t.type==='vor'){
+    if(t.dir==='out'){b=`Intercept <b>radial ${h3(t.R)}</b> outbound dari VOR.`;s=`Set CRS ${h3(t.R)}, flag FROM. Track yang dituju ${h3(t.R)}°.`;}
+    else{b=`Intercept <b>radial ${h3(t.R)}</b> inbound ke VOR.`;s=`Set CRS ${h3(t.course)}, flag TO. Track yang dituju ${h3(t.course)}°.`;}
+    c=`Lolos: dalam ±2,5° dari radial, track ±12°, selama ${EST_NEED} detik.`;
+  }else if(t.type==='ndb'){
+    if(t.dir==='out'){b=`Intercept <b>QDR ${h3(t.R)}</b> outbound dari NDB.`;s=`Tidak ada CDI. Established saat ekor jarum RMI menunjuk ${h3(t.R)}.`;}
+    else{b=`Intercept <b>QDM ${h3(t.course)}</b> inbound ke NDB.`;s=`Tidak ada CDI. Established saat kepala jarum RMI menunjuk ${h3(t.course)}.`;}
+    c=`Lolos: dalam ±2,5° dari garis bearing, track ±12°, selama ${EST_NEED} detik.`;
+  }else{
+    b=`ATC: “Fly heading <b>${h3(t.ih)}</b>, maintain 2500 ft until established, cleared ILS approach runway <b>${t.rwy}</b>.”`;
+    s=`Set CRS ${h3(t.crs)} (front course). Atur V/S sendiri untuk mengikuti glideslope 3°.`;
+    c='Lolos: di DA 200 ft, LOC dan GS masing-masing ≤ 1 dot.';
+  }
+  $('brief').innerHTML=b;$('sub').textContent=s;$('criteria').textContent=c;
+}
+
+/* ---------- navigation math ---------- */
+function nav(){
+  const a=S.ac,t=S.task,o={};
+  o.dist=Math.hypot(a.x,a.y);o.radial=brgOf(a.x,a.y);o.qdm=n360(o.radial+180);
+  if(t.type==='ils'){
+    const u=unit(t.crs),A={x:u.x*1.5,y:u.y*1.5};
+    o.locE=n180(brgOf(a.x-A.x,a.y-A.y)-n360(t.crs+180));
+    const back=unit(t.crs+180);o.along=a.x*back.x+a.y*back.y;
+    o.locValid=Math.abs(o.locE)<35&&o.along>-0.5;
+    const sense=Math.abs(n180(S.obs-t.crs))<=90?1:-1;
+    o.dots=clamp(sense*o.locE/1.25,-2.4,2.4);o.tf=null;o.flag=!o.locValid;
+    if(o.along>0.05&&o.locValid){const ang=Math.atan2(a.alt,o.along*6076.1)*R2D;o.gsE=ang-3;o.gsDots=clamp(-o.gsE/0.35,-2.4,2.4);}
+    else{o.gsE=null;o.gsDots=null;}
+  }else{
+    const diff=n180(o.radial-S.obs),from=Math.abs(diff)<90;
+    const e=from?diff:n180(o.radial-(S.obs+180));
+    o.tf=from?'FROM':'TO';o.dots=clamp((from?-e:e)/5,-2.4,2.4);
+    o.flag=t.type==='ndb'||o.dist<0.4;
+  }
+  return o;
+}
+
+/* ---------- sim ---------- */
+function step(dt){
+  const a=S.ac;
+  const d=n180(a.bug-a.hdg),mx=3*dt;a.hdg=n360(a.hdg+clamp(d,-mx,mx));
+  const air=unit(a.hdg),wv=unit(S.wind.dir+180);
+  const vx=air.x*a.tas+wv.x*S.wind.spd,vy=air.y*a.tas+wv.y*S.wind.spd;
+  a.x+=vx/3600*dt;a.y+=vy/3600*dt;
+  S.gs=Math.hypot(vx,vy);S.trk=brgOf(vx,vy);
+  a.alt=Math.max(0,a.alt+a.vs/60*dt);
+  S.t+=dt;S.trailT+=dt;
+  if(S.trailT>=2){S.trailT=0;S.trail.push([a.x,a.y]);if(S.trail.length>800)S.trail.shift();}
+  evaluate(dt,nav());
+}
+function evaluate(dt,o){
+  if(S.done)return;
+  const t=S.task,a=S.ac;
+  if(t.type==='ils'){
+    const ok=o.locValid&&Math.abs(o.dots)<=0.5&&o.gsDots!==null&&Math.abs(o.gsDots)<=0.5;
+    S.est=ok?S.est+dt:0;
+    if(a.alt<=200&&o.along>0){
+      const locOk=o.locValid&&Math.abs(o.locE)<=1.25,gsOk=o.gsDots!==null&&Math.abs(o.gsDots)<=1;
+      if(locOk&&gsOk)finish(true,'Stabil di DA',`Runway in sight di 200 ft, ${o.along.toFixed(2)} NM dari threshold. LOC ${Math.abs(o.locE/1.25).toFixed(1)} dot, GS ${Math.abs(o.gsDots).toFixed(1)} dot. Waktu ${mmss(S.t)}.`);
+      else{
+        const why=[];if(!locOk)why.push('LOC lebih dari 1 dot');if(!gsOk)why.push(o.gsE!==null&&o.gsE<0?'terlalu rendah di bawah glideslope':'GS lebih dari 1 dot');
+        finish(false,'Missed approach',`Di 200 ft pendekatan tidak stabil: ${why.join(', ')}. Pada jarak ${o.along.toFixed(1)} NM, tinggi glideslope seharusnya sekitar ${Math.round(o.along*318)} ft.`);
+      }
+    }else if(o.along<0)finish(false,'Missed approach','Melewati threshold sebelum turun ke 200 ft. Mulai turun saat diamond GS mencapai tengah.');
+    else if(o.dist>28)finish(false,'Keluar area','Pesawat terlalu jauh dari bandara. Ikuti heading intercept dari ATC.');
+  }else{
+    const e=n180(o.radial-t.R),te=n180(S.trk-t.course);
+    const ok=Math.abs(e)<=2.5&&Math.abs(te)<=12&&o.dist>0.8;
+    S.est=ok?S.est+dt:0;
+    if(S.est>=EST_NEED){
+      let msg=`Established di ${t.type==='vor'?'radial '+h3(t.R):(t.dir==='in'?'QDM '+h3(t.course):'QDR '+h3(t.R))} ${t.dir==='in'?'inbound':'outbound'} dalam ${mmss(S.t)}.`;
+      if(t.type==='vor'&&Math.abs(n180(S.obs-t.course))>2)msg+=` Catatan: CRS masih ${h3(S.obs)}, seharusnya ${h3(t.course)}.`;
+      finish(true,'Established',msg);
+    }
+    else if(t.dir==='in'&&o.dist<0.8&&S.t>5)finish(false,'Melewati stasiun','Pesawat melewati stasiun sebelum established inbound. Intercept lebih awal dengan sudut yang lebih besar.');
+    else if(o.dist>40)finish(false,'Terlalu jauh','Lebih dari 40 NM dari stasiun. Cek lagi orientasi: di radial mana kamu sekarang?');
+    else if(S.t>900)finish(false,'Waktu habis','15 menit berlalu tanpa established.');
+  }
+}
+function finish(ok,title,text){
+  S.done={ok};const r=$('result');r.className='result '+(ok?'ok':'bad');
+  $('resTitle').textContent=title;$('resText').textContent=text;r.hidden=false;
+}
+
+/* ---------- hint ---------- */
+function hint(){
+  const t=S.task,o=nav(),a=S.ac;let h;
+  if(t.type==='ils'){
+    const u=unit(t.crs),cross=a.x*u.y-a.y*u.x;
+    const side=cross>0?'kanan':'kiri',ih=n360(t.crs+(cross>0?-30:30));
+    const gsAlt=Math.max(0,Math.round(o.along*318));
+    h=`Kamu di sebelah <b>${side}</b> centerline, ${o.along.toFixed(1)} NM dari threshold. Intercept LOC dengan heading <b>${h3(ih)}</b>. Saat CDI mulai bergerak dari tepi, belok ke <b>${h3(t.crs)}</b>. Tinggi glideslope di jarak ini ≈ <b>${gsAlt} ft</b>; kamu di ${Math.round(a.alt)} ft. Saat diamond di tengah, turun sekitar <b>${Math.round(S.gs*5/50)*50} fpm</b>.`;
+  }else{
+    const u=unit(t.course),cross=a.x*u.y-a.y*u.x,diff=Math.abs(n180(o.radial-t.R));
+    let ang=t.dir==='in'?clamp(Math.round(diff*2/5)*5,20,90):(diff>=15?45:30);
+    const ih=n360(t.course+(cross>0?-ang:ang));
+    const where=t.type==='vor'?`radial <b>${h3(o.radial)}</b>`:`QDR <b>${h3(o.radial)}</b> (QDM ${h3(o.qdm)})`;
+    h=`Posisi sekarang: ${where}, ${o.dist.toFixed(1)} NM. Garis yang diminta ada di sebelah <b>${cross>0?'kiri':'kanan'}</b> pesawat (dilihat searah track ${h3(t.course)}). Selisih ${Math.round(diff)}° → sudut intercept <b>${ang}°</b> → heading <b>${h3(ih)}</b>. `;
+    h+=t.type==='vor'?`Set CRS ${h3(t.course)} (${t.dir==='in'?'TO':'FROM'}). Saat CDI keluar dari full scale dan mendekati 1 dot, mulai belok ke ${h3(t.course)}.`
+      :(t.dir==='in'?`Pada heading ${h3(ih)}, kepala jarum RMI akan bergerak menuju ${h3(t.course)}. Mulai belok ke ${h3(t.course)} saat kepala jarum sekitar 5° sebelum ${h3(t.course)}.`
+        :`Belok ke ${h3(t.course)} sedikit sebelum ekor jarum RMI menunjuk ${h3(t.R)}.`);
+  }
+  const el=$('hint');el.innerHTML=h;el.hidden=false;
+}
+
+/* ---------- drawing ---------- */
+function prep(cv){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);return{ctx,w,h};
+}
+function circle(ctx,x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);}
+function poly(ctx,pts){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();}
+function card(ctx,R,hdg){
+  ctx.rotate(-hdg*D2R);
+  ctx.strokeStyle=C.fg;
+  for(let i=0;i<360;i+=5){ctx.save();ctx.rotate(i*D2R);ctx.lineWidth=i%10?1:1.6;ctx.beginPath();ctx.moveTo(0,-R*0.93);ctx.lineTo(0,-R*(i%10?0.88:0.84));ctx.stroke();ctx.restore();}
+  const lab={0:'N',90:'E',180:'S',270:'W'};
+  ctx.fillStyle=C.fg;ctx.font=`${Math.round(R*0.12)}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';
+  for(let i=0;i<360;i+=30){ctx.save();ctx.rotate(i*D2R);ctx.fillText(lab[i]||String(i/10),0,-R*0.74);ctx.restore();}
+}
+function lubberAndPlane(ctx,cx,cy,R){
+  ctx.fillStyle=C.amber;poly(ctx,[[cx,cy-R*0.86],[cx-R*0.05,cy-R*0.99],[cx+R*0.05,cy-R*0.99]]);ctx.fill();
+  ctx.strokeStyle=C.amber;ctx.lineWidth=Math.max(2,R*0.025);ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(cx,cy-R*0.13);ctx.lineTo(cx,cy+R*0.12);ctx.moveTo(cx-R*0.13,cy-R*0.02);ctx.lineTo(cx+R*0.13,cy-R*0.02);ctx.moveTo(cx-R*0.05,cy+R*0.11);ctx.lineTo(cx+R*0.05,cy+R*0.11);ctx.stroke();
+}
+function drawHSI(o){
+  const cv=$('hsi'),{ctx,w,h}=prep(cv),cx=w/2,cy=h/2,R=Math.min(w,h)/2-4,a=S.ac;
+  ctx.fillStyle=C.bezel;circle(ctx,cx,cy,R);ctx.fill();
+  ctx.fillStyle=C.face;circle(ctx,cx,cy,R*0.96);ctx.fill();
+  ctx.save();ctx.translate(cx,cy);card(ctx,R,a.hdg);
+  ctx.save();ctx.rotate(a.bug*D2R);ctx.fillStyle=C.cyan;
+  poly(ctx,[[-R*0.07,-R*0.97],[-R*0.07,-R*0.9],[-R*0.025,-R*0.9],[0,-R*0.935],[R*0.025,-R*0.9],[R*0.07,-R*0.9],[R*0.07,-R*0.97]]);ctx.fill();ctx.restore();
+  ctx.rotate(S.obs*D2R);
+  ctx.strokeStyle=C.fg;ctx.lineWidth=1.5;
+  for(const k of [-2,-1,1,2]){circle(ctx,k*R*0.17,0,R*0.03);ctx.stroke();}
+  ctx.strokeStyle=C.mag;ctx.fillStyle=C.mag;ctx.lineWidth=Math.max(2.5,R*0.035);ctx.lineCap='butt';
+  ctx.beginPath();ctx.moveTo(0,-R*0.58);ctx.lineTo(0,-R*0.37);ctx.moveTo(0,R*0.37);ctx.lineTo(0,R*0.66);ctx.stroke();
+  poly(ctx,[[0,-R*0.7],[-R*0.07,-R*0.56],[R*0.07,-R*0.56]]);ctx.fill();
+  if(!o.flag){
+    const x=o.dots*R*0.17;ctx.lineWidth=Math.max(3,R*0.04);ctx.beginPath();ctx.moveTo(x,-R*0.34);ctx.lineTo(x,R*0.34);ctx.stroke();
+    if(o.tf){ctx.fillStyle=C.fg;const y=o.tf==='TO'?-R*0.22:R*0.22,s=o.tf==='TO'?-1:1;poly(ctx,[[R*0.3,y+s*R*0.08],[R*0.24,y],[R*0.36,y]]);ctx.fill();}
+  }
+  ctx.restore();
+  lubberAndPlane(ctx,cx,cy,R);
+  if(o.flag){ctx.fillStyle=C.red;ctx.fillRect(cx-R*0.62,cy-R*0.28,R*0.3,R*0.15);ctx.fillStyle=C.bezel;ctx.font=`bold ${Math.round(R*0.1)}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('NAV',cx-R*0.47,cy-R*0.205);}
+  if(S.task.type==='ils'){
+    const gx=cx+R*0.62;ctx.strokeStyle=C.fg;ctx.lineWidth=1.5;
+    for(const k of [-2,-1,1,2]){circle(ctx,gx,cy+k*R*0.15,R*0.025);ctx.stroke();}
+    ctx.beginPath();ctx.moveTo(gx-R*0.05,cy);ctx.lineTo(gx+R*0.05,cy);ctx.stroke();
+    if(o.gsDots!==null){const y=cy-o.gsDots*R*0.15;ctx.fillStyle=C.mag;poly(ctx,[[gx,y-R*0.06],[gx+R*0.045,y],[gx,y+R*0.06],[gx-R*0.045,y]]);ctx.fill();}
+    else{ctx.fillStyle=C.red;ctx.fillRect(gx-R*0.06,cy-R*0.4,R*0.12,R*0.13);ctx.fillStyle=C.bezel;ctx.font=`bold ${Math.round(R*0.08)}px ${FONT}`;ctx.textAlign='center';ctx.fillText('GS',gx,cy-R*0.335);}
+  }
+  ctx.font=`${Math.max(10,Math.round(R*0.085))}px ${FONT}`;ctx.textBaseline='top';
+  ctx.textAlign='left';ctx.fillStyle=C.mag;ctx.fillText('CRS '+h3(S.obs),4,2);
+  ctx.textAlign='right';ctx.fillStyle=C.cyan;ctx.fillText('HDG '+h3(a.bug),w-4,2);
+  ctx.textBaseline='bottom';ctx.textAlign='left';ctx.fillStyle=C.green;
+  ctx.fillText(S.task.type==='ndb'?'':(S.task.type==='ils'?'LOC ':'VOR ')+(o.flag?'':'DME '+o.dist.toFixed(1)),4,h-2);
+}
+function drawRMI(o){
+  const cv=$('rmi'),{ctx,w,h}=prep(cv),cx=w/2,cy=h/2,R=Math.min(w,h)/2-4;
+  ctx.fillStyle=C.bezel;circle(ctx,cx,cy,R);ctx.fill();
+  ctx.fillStyle=C.face;circle(ctx,cx,cy,R*0.96);ctx.fill();
+  ctx.save();ctx.translate(cx,cy);card(ctx,R,S.ac.hdg);
+  ctx.rotate(o.qdm*D2R);
+  ctx.strokeStyle=C.green;ctx.fillStyle=C.green;ctx.lineWidth=Math.max(3,R*0.045);ctx.lineCap='butt';
+  ctx.beginPath();ctx.moveTo(0,-R*0.62);ctx.lineTo(0,R*0.78);ctx.stroke();
+  poly(ctx,[[0,-R*0.84],[-R*0.09,-R*0.6],[R*0.09,-R*0.6]]);ctx.fill();
+  ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-R*0.07,R*0.82);ctx.lineTo(0,R*0.7);ctx.lineTo(R*0.07,R*0.82);ctx.stroke();
+  ctx.fillStyle=C.fg;circle(ctx,0,0,R*0.05);ctx.fill();
+  ctx.restore();
+  ctx.fillStyle=C.amber;poly(ctx,[[cx,cy-R*0.86],[cx-R*0.05,cy-R*0.99],[cx+R*0.05,cy-R*0.99]]);ctx.fill();
+}
+function planeShape(ctx,x,y,hdg,s,col){
+  ctx.save();ctx.translate(x,y);ctx.rotate(hdg*D2R);ctx.scale(s,s);ctx.fillStyle=col;
+  const half=[[0,-1],[.12,-.75],[.13,-.2],[1,.12],[1,.28],[.13,.18],[.1,.65],[.42,.85],[.42,1],[0,.92]];
+  const pts=half.concat(half.slice(1,-1).reverse().map(p=>[-p[0],p[1]]));
+  poly(ctx,pts);ctx.fill();ctx.restore();
+}
+function drawMap(o){
+  const cv=$('map'),{ctx,w,h}=prep(cv),a=S.ac,t=S.task;
+  ctx.fillStyle=C.face;ctx.fillRect(0,0,w,h);
+  const tx=a.x/2,ty=a.y/2,th=Math.max(9,o.dist*0.6+4),k=0.06;
+  S.vc.x+=(tx-S.vc.x)*k;S.vc.y+=(ty-S.vc.y)*k;S.vc.half+=(th-S.vc.half)*k;
+  const s=Math.min(w,h)/2/S.vc.half;
+  const P=(x,y)=>[w/2+(x-S.vc.x)*s,h/2-(y-S.vc.y)*s];
+  const st=P(0,0);
+  // rings
+  const stepNM=S.vc.half>25?10:5;ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.fillStyle=C.muted;ctx.font=`11px ${FONT}`;ctx.textAlign='left';ctx.textBaseline='bottom';
+  for(let r=stepNM;r<=60;r+=stepNM){circle(ctx,st[0],st[1],r*s);ctx.stroke();ctx.fillText(r+' NM',st[0]+r*s*0.707+3,st[1]-r*s*0.707);}
+  // compass rose ticks around station (radial reference)
+  for(let i=0;i<360;i+=30){const u=unit(i),r1=stepNM*s*0.82,r2=stepNM*s;ctx.beginPath();ctx.moveTo(st[0]+u.x*r1,st[1]-u.y*r1);ctx.lineTo(st[0]+u.x*r2,st[1]-u.y*r2);ctx.stroke();}
+  // target line
+  ctx.strokeStyle=C.mag;ctx.lineWidth=2;ctx.setLineDash([8,6]);
+  if(t.type==='ils'){
+    const b=unit(t.crs+180),e=P(b.x*30,b.y*30);ctx.beginPath();ctx.moveTo(st[0],st[1]);ctx.lineTo(e[0],e[1]);ctx.stroke();ctx.setLineDash([]);
+    const u=unit(t.crs),re=P(u.x*1.5,u.y*1.5);ctx.strokeStyle=C.fg;ctx.lineWidth=Math.max(4,0.05*s);ctx.beginPath();ctx.moveTo(st[0],st[1]);ctx.lineTo(re[0],re[1]);ctx.stroke();
+    // GS intercept at 2500 ft
+    const gi=2500/318,gp=P(b.x*gi,b.y*gi);ctx.fillStyle=C.mag;ctx.beginPath();ctx.moveTo(gp[0],gp[1]-6);ctx.lineTo(gp[0]+5,gp[1]);ctx.lineTo(gp[0],gp[1]+6);ctx.lineTo(gp[0]-5,gp[1]);ctx.closePath();ctx.fill();
+    ctx.fillStyle=C.fg;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('RWY '+t.rwy,re[0]+8,re[1]);
+  }else{
+    const u=unit(t.R),e=P(u.x*60,u.y*60);ctx.beginPath();ctx.moveTo(st[0],st[1]);ctx.lineTo(e[0],e[1]);ctx.stroke();ctx.setLineDash([]);
+    const m=P(u.x*Math.max(4,S.vc.half*0.5),u.y*Math.max(4,S.vc.half*0.5)),dirA=t.course;
+    planeArrow(ctx,m[0],m[1],dirA);
+    ctx.fillStyle=C.mag;ctx.textAlign='left';ctx.textBaseline='bottom';
+    ctx.fillText((t.type==='vor'?'R-':'QDR ')+h3(t.R),m[0]+10,m[1]-8);
+    // station symbol
+    ctx.strokeStyle=C.cyan;ctx.fillStyle=C.cyan;ctx.lineWidth=2;
+    if(t.type==='vor'){const hx=[];for(let i=0;i<6;i++){const an=(i*60+30)*D2R;hx.push([st[0]+Math.cos(an)*8,st[1]+Math.sin(an)*8]);}poly(ctx,hx);ctx.stroke();circle(ctx,st[0],st[1],2);ctx.fill();}
+    else{for(let r=4;r<=12;r+=4)for(let i=0;i<360;i+=30){const an=(i+r*7)*D2R;circle(ctx,st[0]+Math.cos(an)*r,st[1]+Math.sin(an)*r,1.1);ctx.fill();}circle(ctx,st[0],st[1],2.5);ctx.fill();}
+  }
+  // trail
+  ctx.fillStyle=C.cyan;ctx.globalAlpha=.55;for(const p of S.trail){const q=P(p[0],p[1]);ctx.fillRect(q[0]-1,q[1]-1,2,2);}ctx.globalAlpha=1;
+  // track vector (1 min)
+  const ap=P(a.x,a.y),tv=unit(S.trk),L=S.gs/60;
+  ctx.strokeStyle=C.green;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(ap[0],ap[1]);ctx.lineTo(ap[0]+tv.x*L*s,ap[1]-tv.y*L*s);ctx.stroke();
+  planeShape(ctx,ap[0],ap[1],a.hdg,11,C.fg);
+  // wind
+  if(S.wind.spd){const wx=w-34,wy=34,u=unit(S.wind.dir+180);ctx.strokeStyle=C.cyan;ctx.fillStyle=C.cyan;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wx-u.x*16,wy+u.y*16);ctx.lineTo(wx+u.x*16,wy-u.y*16);ctx.stroke();planeArrow(ctx,wx+u.x*16,wy-u.y*16,S.wind.dir+180,C.cyan);ctx.font=`11px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(h3(S.wind.dir)+'/'+S.wind.spd,wx,wy+22);}
+  // north
+  ctx.fillStyle=C.muted;ctx.font=`11px ${FONT}`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('N ↑  ·  garis hijau = track 1 menit',10,10);
+  if(!S.mapOn){
+    ctx.fillStyle=C.face;ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=C.muted;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`14px ${FONT}`;
+    ctx.fillText('Peta disembunyikan',w/2,h/2-10);ctx.font=`12px ${FONT}`;ctx.fillText('Terbang hanya dengan HSI dan RMI',w/2,h/2+12);
+  }
+}
+function planeArrow(ctx,x,y,dir,col){
+  ctx.save();ctx.translate(x,y);ctx.rotate(dir*D2R);ctx.fillStyle=col||C.mag;poly(ctx,[[0,-8],[6,4],[-6,4]]);ctx.fill();ctx.restore();
+}
+function readouts(o){
+  const a=S.ac,t=S.task;
+  $('rHdg').textContent=h3(a.hdg);$('rTrk').textContent=h3(S.trk);$('rGs').textContent=Math.round(S.gs);
+  $('rDme').textContent=t.type==='ndb'?'---':o.dist.toFixed(1);
+  $('rAlt').textContent=Math.round(a.alt);$('rVs').textContent=(a.vs>0?'+':'')+a.vs;
+  $('rWind').textContent=S.wind.spd?h3(S.wind.dir)+'° / '+S.wind.spd+' kt':'CALM';
+  $('vBug').textContent=h3(a.bug);$('vCrs').textContent=h3(S.obs);$('vVs').textContent=(a.vs>0?'+':'')+a.vs;
+  $('clock').textContent=mmss(S.t)+(S.paused?' · JEDA':'');
+  const c1=$('chip1'),c2=$('chip2');
+  if(t.type==='ils'){
+    const locCap=o.locValid&&Math.abs(o.dots)<1,gsCap=o.gsDots!==null&&Math.abs(o.gsDots)<1;
+    c1.textContent=locCap?'LOC ✓':'LOC ARM';c1.className='chip '+(locCap?'on':'warn');
+    c2.textContent=gsCap?'GS ✓':'GS ARM';c2.className='chip '+(gsCap?'on':'warn');
+    $('progBar').style.width=Math.min(100,S.est/EST_NEED*100)+'%';$('progTxt').textContent='stabil '+Math.floor(S.est)+' s';
+  }else{
+    const e=Math.abs(n180(o.radial-t.R));
+    c1.textContent=S.est>0?'ESTABLISHED':(e<10?'MENDEKATI':'MENCARI');c1.className='chip '+(S.est>0?'on':e<10?'warn':'');
+    $('progBar').style.width=Math.min(100,S.est/EST_NEED*100)+'%';$('progTxt').textContent=Math.floor(Math.min(S.est,EST_NEED))+'/'+EST_NEED+' s';
+  }
+}
+
+/* ---------- loop ---------- */
+let last=performance.now();
+function frame(now){
+  const real=Math.min(0.1,(now-last)/1000);last=now;
+  if(!S.paused&&!S.done){let dt=real*S.rate;while(dt>0){const d=Math.min(dt,0.05);step(d);dt-=d;if(S.done)break;}}
+  const o=nav();
+  drawHSI(o);drawRMI(o);drawMap(o);readouts(o);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- input ---------- */
+const bugAdj=d=>{S.ac.bug=n360(Math.round(S.ac.bug)+d)};
+const crsAdj=d=>{S.obs=n360(Math.round(S.obs)+d)};
+const vsAdj=d=>{S.ac.vs=clamp(S.ac.vs+d,-2000,2000)};
+document.querySelectorAll('[data-bug]').forEach(b=>b.addEventListener('click',()=>bugAdj(+b.dataset.bug)));
+document.querySelectorAll('[data-crs]').forEach(b=>b.addEventListener('click',()=>crsAdj(+b.dataset.crs)));
+document.querySelectorAll('[data-vs]').forEach(b=>b.addEventListener('click',()=>vsAdj(+b.dataset.vs)));
+document.querySelectorAll('[data-rate]').forEach(b=>b.addEventListener('click',()=>{S.rate=+b.dataset.rate;document.querySelectorAll('[data-rate]').forEach(x=>x.classList.toggle('sel',x===b));}));
+function togglePause(){S.paused=!S.paused;$('pause').textContent=S.paused?'Lanjut':'Jeda';}
+$('pause').addEventListener('click',togglePause);
+$('newBtn').addEventListener('click',newScenario);$('next').addEventListener('click',newScenario);$('retry').addEventListener('click',retry);
+$('hintBtn').addEventListener('click',hint);
+$('optWind').addEventListener('change',e=>{S.windOn=e.target.checked;newScenario();});
+$('optMap').addEventListener('change',e=>{S.mapOn=e.target.checked;});
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+  S.mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-selected',x===b?'true':'false'));
+  try{localStorage.setItem('itr-mode',S.mode)}catch(e){}
+  newScenario();
+}));
+document.addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('input,textarea'))return;
+  const st=e.shiftKey?1:5;let used=true;
+  switch(e.key){
+    case 'ArrowLeft':bugAdj(-st);break;case 'ArrowRight':bugAdj(st);break;
+    case 'ArrowUp':if(S.task.type==='ils')vsAdj(100);else used=false;break;
+    case 'ArrowDown':if(S.task.type==='ils')vsAdj(-100);else used=false;break;
+    case 'q':case 'Q':crsAdj(-st);break;case 'e':case 'E':crsAdj(st);break;
+    case ' ':togglePause();break;
+    case 'n':case 'N':newScenario();break;case 'h':case 'H':hint();break;
+    default:used=false;
+  }
+  if(used)e.preventDefault();
+});
+
+try{const m=localStorage.getItem('itr-mode');if(m&&['vor','ndb','ils'].includes(m)){S.mode=m;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-selected',x.dataset.mode===m?'true':'false'));}}catch(e){}
+newScenario();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
